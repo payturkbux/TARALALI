@@ -206,7 +206,6 @@
         .msg-error { background: rgba(239, 68, 68, 0.2); color: var(--danger-color); border: 1px solid var(--danger-color); }
         .msg-success { background: rgba(16, 185, 129, 0.2); color: var(--success-color); border: 1px solid var(--success-color); }
 
-        /* منطقة اللعبة وتجاوب الشاشة */
         #gameAreaWrapper {
             position: fixed;
             top: 0;
@@ -260,50 +259,15 @@
         }
 
         @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-
-            .card {
-                padding: 18px;
-                border-radius: 16px;
-            }
-
-            .app-title {
-                font-size: 20px;
-                margin-bottom: 15px;
-            }
-
-            .grid-2 {
-                grid-template-columns: 1fr;
-                gap: 15px;
-            }
-
-            .auth-buttons-container {
-                flex-direction: column;
-                gap: 10px !important;
-            }
-
-            .stat-val {
-                font-size: 18px;
-            }
-
-            #game-top-bar {
-                top: 10px;
-                right: 10px;
-            }
-
-            #game-top-bar button {
-                padding: 6px 12px !important;
-                font-size: 12px !important;
-            }
-
-            .chatbox {
-                left: 10px;
-                bottom: 100px;
-                width: calc(100% - 20px);
-                max-width: none;
-            }
+            body { padding: 10px; }
+            .card { padding: 18px; border-radius: 16px; }
+            .app-title { font-size: 20px; margin-bottom: 15px; }
+            .grid-2 { grid-template-columns: 1fr; gap: 15px; }
+            .auth-buttons-container { flex-direction: column; gap: 10px !important; }
+            .stat-val { font-size: 18px; }
+            #game-top-bar { top: 10px; right: 10px; }
+            #game-top-bar button { padding: 6px 12px !important; font-size: 12px !important; }
+            .chatbox { left: 10px; bottom: 100px; width: calc(100% - 20px); max-width: none; }
         }
     </style>
 </head>
@@ -368,7 +332,6 @@
         <div id="auth-section" class="card">
             <div class="app-title" id="auth-title">منصة ترلالي للألعاب - تسجيل الدخول</div>
             
-            <!-- حقل اسم المستخدم (يظهر أثناء إنشاء حساب جديد) -->
             <div class="input-group hidden" id="group-username">
                 <label>اسم المستخدم (داخل اللعبة)</label>
                 <input type="text" id="auth-username" placeholder="أدخل اسمك المفضّل" dir="rtl" style="text-align: right;">
@@ -486,6 +449,18 @@
             document.getElementById("btn-do-logout").addEventListener("click", execLogout);
         });
 
+        // دالة تنظيف اسم المستخدم لمنع إظهار الإيميل بالكامل أو جزء منه
+        function sanitizeNick(name) {
+            if (!name) return "Player";
+            let cleanName = name.trim();
+            if (cleanName.includes("@")) {
+                cleanName = cleanName.split("@")[0];
+            }
+            // إزالة أي رموز خاصة وحفظ الحروف والأرقام والمسافات فقط
+            cleanName = cleanName.replace(/[^a-zA-Z0-9\u0600-\u06FF\s_]/g, "");
+            return cleanName.trim() || "Player";
+        }
+
         async function checkCurrentSession() {
             const { data: { session } } = await db.auth.getSession();
             if (session) {
@@ -549,7 +524,7 @@
                 email, 
                 password,
                 options: {
-                    data: { username: username }
+                    data: { username: sanitizeNick(username) }
                 }
             });
 
@@ -567,12 +542,15 @@
         async function loadDashboard() {
             if (!currentUser) return;
 
-            const userEmail = currentUser.email || "";
-            const defaultName = currentUser.user_metadata?.username || userEmail.split('@')[0] || "Player";
+            // التأكد من عدم اختيار الإيميل كاسم افتراضي مطلقاً
+            let defaultName = currentUser.user_metadata?.username;
+            if (!defaultName || defaultName.includes("@")) {
+                defaultName = "Player";
+            }
 
             document.getElementById("auth-section").classList.add("hidden");
             document.getElementById("dashboard-section").classList.remove("hidden");
-            document.getElementById("customPlayerName").value = defaultName;
+            document.getElementById("customPlayerName").value = sanitizeNick(defaultName);
 
             const { data, error } = await db.from("users").select("*").eq("id", currentUser.id).single();
             if (data) {
@@ -580,8 +558,8 @@
                 document.getElementById("txt-balance").innerText = data.balance ? data.balance.toFixed(2) : "0.00";
                 document.getElementById("txt-points").innerText = data.points || 0;
                 
-                if (data.username) {
-                    document.getElementById("customPlayerName").value = data.username;
+                if (data.username && !data.username.includes("@")) {
+                    document.getElementById("customPlayerName").value = sanitizeNick(data.username);
                 }
 
                 renderSubscriptionStatus(data.subscription_expires_at);
@@ -622,23 +600,20 @@
         async function execActivate() {
             if (!userData) return;
 
-            // 1. خيار المنع: التحقق أولاً من صلاحية الاشتراك الحالي قبل خصم أي نقاط
             const now = new Date();
             const currentExpiry = userData.subscription_expires_at ? new Date(userData.subscription_expires_at) : null;
 
             if (currentExpiry && currentExpiry > now) {
                 const formattedDate = currentExpiry.toLocaleString('ar-EG');
                 alert(`اشتراكك الحالي لا يزال فعالاً حتى (${formattedDate}). لا يمكنك التجديد الآن!`);
-                return; // إلغاء العملية فوراً ومنع الخصم
+                return;
             }
 
-            // 2. التحقق من وجود نقاط كافية (10 نقاط)
             if ((userData.points || 0) < 10) {
                 alert("رصيد النقاط غير كافٍ! تحتاج إلى 10 نقاط لتفعيل اليوم.");
                 return;
             }
 
-            // 3. التفعيل في حال انتهى الاشتراك أو لم يكن مفعلاً
             const { error } = await db.rpc("activate_daily_subscription", { user_id_param: currentUser.id });
             if (error) {
                 alert("تعذر التفعيل: " + error.message);
@@ -656,8 +631,12 @@
                 return;
             }
 
-            const nick = document.getElementById("customPlayerName").value.trim() || "Player";
-            document.getElementById("playerNameInput").value = nick;
+            // فلترة وحماية اسم اللاعب قبل إرساله للعبة
+            const rawNick = document.getElementById("customPlayerName").value;
+            const cleanNick = sanitizeNick(rawNick);
+            
+            document.getElementById("customPlayerName").value = cleanNick;
+            document.getElementById("playerNameInput").value = cleanNick;
 
             document.getElementById("main-ui").classList.add("hidden");
             document.getElementById("gameAreaWrapper").classList.remove("hidden");
