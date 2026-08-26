@@ -101,8 +101,8 @@
     </div>
 
     <script>
-        const SUPABASE_URL = "https://gapbwgghvcjcibiumazm.supabase.co"; 
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhcGJ3Z2dodmNqY2liaXVtYXptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3Mzk1MzksImV4cCI6MjEwMzMxNTUzOX0.DmbZnd6extRclfxDrZFbCW0-VudECPOc4vNSJ0F6YS8"; 
+        const SUPABASE_URL = "process.env.SUPABASE_URL"; 
+        const SUPABASE_ANON_KEY = "process.env.SUPABASE_SERVICE_KEY"; 
         const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         document.addEventListener("DOMContentLoaded", async () => {
