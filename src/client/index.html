@@ -206,7 +206,7 @@
         .msg-error { background: rgba(239, 68, 68, 0.2); color: var(--danger-color); border: 1px solid var(--danger-color); }
         .msg-success { background: rgba(16, 185, 129, 0.2); color: var(--success-color); border: 1px solid var(--success-color); }
 
-        /* منطقة اللعبة وتجاوب الهاتف */
+        /* منطقة اللعبة وتجاوب الشاشة */
         #gameAreaWrapper {
             position: fixed;
             top: 0;
@@ -259,7 +259,6 @@
             display: none !important;
         }
 
-        /* الاستجابة للهواتف المحمولة (Responsive Design) */
         @media (max-width: 768px) {
             body {
                 padding: 10px;
@@ -310,7 +309,7 @@
 </head>
 <body>
 
-    <!-- عناصر اللعبة الأصلية الشاملة -->
+    <!-- منطقة اللعبة -->
     <div id="gameAreaWrapper" class="hidden">
         <div id="game-top-bar">
             <button onclick="exitGameToDashboard()" class="btn btn-danger" style="padding: 8px 16px; font-size: 13px; width: auto;">🏠 العودة للوحة التحكم</button>
@@ -327,7 +326,7 @@
         <canvas tabindex="1" id="cvs"></canvas>
     </div>
 
-    <!-- العناصر المطلوبة برمجياً داخل الـ DOM لتفادي أخطاء JS -->
+    <!-- العناصر المطلوبة داخل الـ DOM لتفادي أخطاء JS -->
     <div id="startMenuWrapper">
         <div id="startMenu">
             <p>Open Agar</p>
@@ -369,15 +368,15 @@
         <div id="auth-section" class="card">
             <div class="app-title" id="auth-title">منصة ترلالي للألعاب - تسجيل الدخول</div>
             
-            <!-- حقل اسم المستخدم (يظهر فقط أثناء إنشاء حساب جديد) -->
+            <!-- حقل اسم المستخدم (يظهر أثناء إنشاء حساب جديد) -->
             <div class="input-group hidden" id="group-username">
                 <label>اسم المستخدم (داخل اللعبة)</label>
                 <input type="text" id="auth-username" placeholder="أدخل اسمك المفضّل" dir="rtl" style="text-align: right;">
             </div>
 
             <div class="input-group">
-                <label>رقم الهاتف</label>
-                <input type="tel" id="auth-phone" placeholder="+9665xxxxxxxx أو +905xxxxxxxxx" dir="ltr" style="text-align: left;">
+                <label>البريد الإلكتروني</label>
+                <input type="email" id="auth-email" placeholder="example@domain.com" dir="ltr" style="text-align: left;">
             </div>
 
             <div class="input-group">
@@ -439,7 +438,7 @@
                     <div style="background: rgba(15, 23, 42, 0.4); padding: 15px; border-radius: 12px; border: 1px solid var(--card-border);">
                         <h4 style="font-size: 15px; margin-bottom: 12px; text-align: center;">تحويل النقاط</h4>
                         <div class="input-group">
-                            <input type="tel" id="transfer-receiver" placeholder="رقم هاتف المستلم" dir="ltr" style="text-align: left; font-size: 13px;">
+                            <input type="email" id="transfer-receiver-email" placeholder="البريد الإلكتروني للمستلم" dir="ltr" style="text-align: left; font-size: 13px;">
                         </div>
                         <div class="input-group">
                             <input type="number" id="transfer-amount" placeholder="عدد النقاط (الحد الأدنى 50)" style="font-size: 13px;">
@@ -505,16 +504,16 @@
                 return;
             }
 
-            const phone = document.getElementById("auth-phone").value.trim();
+            const email = document.getElementById("auth-email").value.trim();
             const password = document.getElementById("auth-password").value;
             renderAuthMsg("");
 
-            if (!phone || !password) {
-                renderAuthMsg("يرجى إدخال رقم الهاتف وكلمة المرور.", true);
+            if (!email || !password) {
+                renderAuthMsg("يرجى إدخال البريد الإلكتروني وكلمة المرور.", true);
                 return;
             }
 
-            const { data, error } = await db.auth.signInWithPassword({ phone, password });
+            const { data, error } = await db.auth.signInWithPassword({ email, password });
             if (error) {
                 renderAuthMsg(error.message, true);
             } else {
@@ -537,17 +536,17 @@
 
         async function execRegister() {
             const username = document.getElementById("auth-username").value.trim();
-            const phone = document.getElementById("auth-phone").value.trim();
+            const email = document.getElementById("auth-email").value.trim();
             const password = document.getElementById("auth-password").value;
             renderAuthMsg("");
 
-            if (!username || !phone || !password) {
-                renderAuthMsg("يرجى إدخال جميع البيانات (اسم المستخدم، رقم الهاتف، وكلمة المرور).", true);
+            if (!username || !email || !password) {
+                renderAuthMsg("يرجى إدخال جميع البيانات (اسم المستخدم، البريد الإلكتروني، وكلمة المرور).", true);
                 return;
             }
 
             const { data, error } = await db.auth.signUp({ 
-                phone, 
+                email, 
                 password,
                 options: {
                     data: { username: username }
@@ -568,10 +567,9 @@
         async function loadDashboard() {
             if (!currentUser) return;
 
-            const userPhone = currentUser.phone || currentUser.user_metadata?.phone || "";
-            const defaultName = currentUser.user_metadata?.username || userPhone || "Player";
+            const userEmail = currentUser.email || "";
+            const defaultName = currentUser.user_metadata?.username || userEmail.split('@')[0] || "Player";
 
-            localStorage.setItem("userPhone", userPhone);
             document.getElementById("auth-section").classList.add("hidden");
             document.getElementById("dashboard-section").classList.remove("hidden");
             document.getElementById("customPlayerName").value = defaultName;
@@ -670,17 +668,17 @@
         }
 
         async function execTransfer() {
-            const receiverPhone = document.getElementById("transfer-receiver").value.trim();
+            const receiverEmail = document.getElementById("transfer-receiver-email").value.trim();
             const amount = parseInt(document.getElementById("transfer-amount").value);
 
-            if (!receiverPhone || isNaN(amount) || amount < 50) {
-                alert("يرجى إدخال رقم هاتف المستلم وأن لا يقل عدد النقاط عن 50 نقطة.");
+            if (!receiverEmail || isNaN(amount) || amount < 50) {
+                alert("يرجى إدخال البريد الإلكتروني للمستلم وأن لا يقل عدد النقاط عن 50 نقطة.");
                 return;
             }
 
-            const { error } = await db.rpc("transfer_points_by_phone", { 
+            const { error } = await db.rpc("transfer_points_by_email", { 
                 sender_id: currentUser.id, 
-                receiver_phone: receiverPhone, 
+                receiver_email: receiverEmail, 
                 points_to_transfer: amount 
             });
 
@@ -694,7 +692,6 @@
 
         async function execLogout() {
             await db.auth.signOut();
-            localStorage.removeItem("userPhone");
             location.reload();
         }
 
