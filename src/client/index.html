@@ -2,15 +2,22 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة الألعاب والمحفظة الرقمية | Taralali</title>
-    <!-- خط Tajawal من Google Fonts للمظهر الاحترافي -->
+    <title>TARALALI | منصة الألعاب والمحفظة الرقمية</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- CSS الخاص باللعبة والخطوط -->
+    <link rel="stylesheet" href="css/main.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
-    
+
+    <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
+
+    <!-- Audio Elements الأصيلة -->
+    <audio id="split_cell" src="audio/split.mp3"></audio>
+    <audio id="spawn_cell" src="audio/spawn.mp3"></audio>
+
     <style>
         :root {
             --bg-color: #0f172a;
@@ -39,31 +46,14 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 15px;
+            overflow-x: hidden;
         }
 
-        .container {
+        .main-container {
             width: 100%;
-            max-width: 480px;
-        }
-
-        .brand-header {
-            text-align: center;
-            margin-bottom: 25px;
-        }
-
-        .brand-header h1 {
-            font-size: 28px;
-            font-weight: 800;
-            background: linear-gradient(135deg, #60a5fa, #a855f7);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 5px;
-        }
-
-        .brand-header p {
-            color: var(--text-muted);
-            font-size: 14px;
+            max-width: 900px;
+            z-index: 10;
         }
 
         .card {
@@ -71,709 +61,397 @@
             border: 1px solid var(--card-border);
             border-radius: 16px;
             padding: 24px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
             margin-bottom: 20px;
         }
 
-        .card h2 {
-            font-size: 20px;
-            margin-bottom: 20px;
+        .hidden { display: none !important; }
+
+        .auth-header, .dashboard-header {
             text-align: center;
-            color: var(--text-main);
+            margin-bottom: 20px;
+        }
+
+        .auth-header h1, .dashboard-header h1 {
+            font-size: 24px;
+            color: var(--accent-color);
+            font-weight: 800;
         }
 
         .input-group {
             margin-bottom: 15px;
+            text-align: right;
         }
 
         .input-group label {
             display: block;
-            font-size: 13px;
-            color: var(--text-muted);
             margin-bottom: 6px;
+            font-size: 14px;
+            color: var(--text-muted);
         }
 
-        input {
+        .input-group input {
             width: 100%;
-            padding: 12px 16px;
-            background: #0f172a;
-            border: 1px solid var(--card-border);
+            padding: 12px;
             border-radius: 8px;
+            border: 1px solid var(--card-border);
+            background: rgba(15, 23, 42, 0.6);
             color: var(--text-main);
             font-size: 15px;
-            transition: all 0.3s ease;
-        }
-
-        input:focus {
             outline: none;
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+            direction: ltr;
+            text-align: right;
         }
 
-        button {
+        .input-group input:focus {
+            border-color: var(--accent-color);
+        }
+
+        .btn {
             width: 100%;
-            padding: 12px 16px;
+            padding: 12px;
+            border: none;
             border-radius: 8px;
             font-size: 16px;
             font-weight: 700;
             cursor: pointer;
-            border: none;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .btn-primary {
-            background: var(--accent-color);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: var(--accent-hover);
-        }
-
-        .btn-success {
-            background: var(--success-color);
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #059669;
-        }
-
-        .btn-warning {
-            background: var(--warning-color);
-            color: #0f172a;
-        }
-
-        .btn-warning:hover {
-            background: #d97706;
-        }
-
-        .btn-danger {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--danger-color);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-        }
-
-        .btn-danger:hover {
-            background: rgba(239, 68, 68, 0.2);
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed !important;
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        .msg-box {
-            font-size: 14px;
-            margin-top: 12px;
+            transition: all 0.2s ease;
+            display: inline-block;
             text-align: center;
-            padding: 8px;
-            border-radius: 6px;
-        }
-
-        .msg-error {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--danger-color);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-        }
-
-        .msg-success {
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--success-color);
-            border: 1px solid rgba(16, 185, 129, 0.2);
-        }
-
-        .link-text {
-            color: var(--accent-color);
-            cursor: pointer;
-            font-size: 13px;
             text-decoration: none;
-            transition: 0.2s;
         }
 
-        .link-text:hover {
-            text-decoration: underline;
-        }
-
-        .text-center {
-            text-align: center;
-        }
-
-        /* Dashboard Specifics */
-        .user-info-bar {
-            background: #0f172a;
-            border-radius: 10px;
-            padding: 12px;
-            margin-bottom: 15px;
-            font-size: 14px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+        .btn-primary { background: var(--accent-color); color: white; }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-success { background: var(--success-color); color: white; }
+        .btn-warning { background: var(--warning-color); color: white; }
+        .btn-danger { background: var(--danger-color); color: white; }
+        .btn-secondary { background: #475569; color: white; }
 
         .stats-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
         }
 
         .stat-card {
-            background: #0f172a;
+            background: rgba(15, 23, 42, 0.4);
             border: 1px solid var(--card-border);
-            border-radius: 10px;
-            padding: 12px;
+            border-radius: 12px;
+            padding: 15px;
             text-align: center;
         }
 
-        .stat-card .value {
-            font-size: 20px;
-            font-weight: 800;
-            color: #60a5fa;
-            margin-top: 4px;
-        }
-
-        .stat-card .label {
-            font-size: 12px;
-            color: var(--text-muted);
-        }
+        .stat-title { font-size: 13px; color: var(--text-muted); margin-bottom: 5px; }
+        .stat-value { font-size: 22px; font-weight: 800; color: var(--accent-color); }
 
         .status-badge {
             display: inline-block;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 700;
-            margin-bottom: 10px;
+            padding: 6px 16px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 15px;
         }
 
-        .status-active {
-            background: rgba(16, 185, 129, 0.15);
-            color: var(--success-color);
-            border: 1px solid rgba(16, 185, 129, 0.3);
+        .status-active { background: rgba(16, 185, 129, 0.2); color: var(--success-color); border: 1px solid var(--success-color); }
+        .status-inactive { background: rgba(239, 68, 68, 0.2); color: var(--danger-color); border: 1px solid var(--danger-color); }
+
+        .grid-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
         }
 
-        .status-inactive {
-            background: rgba(239, 68, 68, 0.15);
-            color: var(--danger-color);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-        }
-
-        .countdown-timer {
-            font-size: 22px;
-            font-weight: 800;
-            letter-spacing: 2px;
-            color: var(--warning-color);
-            background: #0f172a;
-            padding: 10px;
+        .settings-box {
+            background: rgba(15, 23, 42, 0.4);
             border-radius: 8px;
-            margin: 10px 0;
-            border: 1px dashed var(--warning-color);
+            padding: 15px;
+            margin-top: 15px;
+            text-align: right;
         }
 
-        .divider {
-            height: 1px;
-            background: var(--card-border);
-            margin: 20px 0;
+        .settings-box label {
+            display: block;
+            margin: 8px 0;
+            cursor: pointer;
+            font-size: 14px;
         }
+
+        .divider { height: 1px; background: var(--card-border); margin: 20px 0; }
+        .msg-box { padding: 10px; border-radius: 6px; font-size: 14px; margin-top: 10px; text-align: center; }
+        .msg-error { background: rgba(239, 68, 68, 0.2); color: var(--danger-color); }
+        .msg-success { background: rgba(16, 185, 129, 0.2); color: var(--success-color); }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        
-        <div class="brand-header">
-            <h1>TARALALI</h1>
-            <p>منصة الألعاب والمحفظة الرقمية الموحدة</p>
+    <!-- حاوية اللعبة الأصلية (تكون مخفية عند فتح البوابة) -->
+    <div id="gameAreaWrapper" class="hidden">
+        <div id="status"><span class="title">Leaderboard</span></div>
+        <div class="chatbox" id="chatbox">
+            <ul id="chatList" class="chat-list"></ul>
+            <input id="chatInput" type="text" class="chat-input" placeholder="Chat here..." maxlength="35" />
         </div>
-
-        <!-- شاشة التحميل الأولية -->
-        <div id="loading-section" class="card text-center">
-            <h3>جاري التحقق من الجلسة... ⏳</h3>
+        <div id="mobile">
+           <input type="image" id="split" class="split" src="img/split.png" alt="splitBtn">
+           <input type="image" id="feed" class="feed" src="img/feed.png" alt="feedBtn">
         </div>
+        <canvas tabindex="1" id="cvs"></canvas>
+    </div>
 
-        <!-- 1. قسم تسجيل الدخول / التسجيل -->
-        <div id="auth-section" class="card hidden">
-            <h2 id="auth-title">تسجيل الدخول</h2>
-            
+    <!-- المحفظة ولوحة التحكم والشروع الموحدة -->
+    <div class="main-container">
+
+        <!-- 1. قسم تسجيل الدخول / إنشاء حساب -->
+        <div id="auth-section" class="card">
+            <div class="auth-header">
+                <h1>منصة ترلالي للالعاب والمحفظة الرقمية</h1>
+                <p style="color: var(--text-muted); font-size: 14px; margin-top: 5px;">سجل دخولك لبدء اللعب وإدارة نقاطك</p>
+            </div>
+
             <div class="input-group">
                 <label>البريد الإلكتروني</label>
-                <input type="email" id="email" placeholder="name@domain.com">
-            </div>
-            
-            <div class="input-group" id="pass-group">
-                <label>كلمة المرور</label>
-                <input type="password" id="pincode" placeholder="••••••••">
-            </div>
-            
-            <div class="input-group hidden" id="ref-group">
-                <label>كود الإحالة (اختياري)</label>
-                <input type="text" id="ref-input" placeholder="مثال: REF-123456">
+                <input type="email" id="auth-email" placeholder="name@example.com">
             </div>
 
-            <button id="main-btn" class="btn-primary" onclick="handleAuth()">دخول</button>
-
-            <div style="margin-top: 15px;" class="text-center">
-                <span id="toggle-mode" class="link-text" onclick="toggleMode()">ليس لديك حساب؟ إنشاء حساب جديد</span>
-            </div>
-            <div style="margin-top: 8px;" class="text-center">
-                <span id="forgot-password-link" class="link-text" style="color: var(--text-muted);" onclick="showForgotPassword()">نسيت كلمة المرور؟</span>
-            </div>
-
-            <div id="auth-msg-box" class="msg-box hidden"></div>
-        </div>
-
-        <!-- 1.5 قسم إعادة تعيين كلمة المرور -->
-        <div id="reset-password-section" class="card hidden text-center">
-            <h2>تعيين كلمة مرور جديدة 🔑</h2>
-            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px;">أدخل كلمة المرور الجديدة للحساب</p>
-            
             <div class="input-group">
-                <input type="password" id="new-password" placeholder="كلمة المرور الجديدة">
+                <label>كلمة المرور</label>
+                <input type="password" id="auth-password" placeholder="••••••••">
             </div>
-            
-            <button id="btn-reset-pass" class="btn-primary" onclick="updateNewPassword()">تحديث كلمة المرور</button>
-            <div id="reset-msg-box" class="msg-box hidden"></div>
+
+            <div id="auth-msg" class="msg-box hidden"></div>
+
+            <div style="margin-top: 20px;">
+                <button class="btn btn-primary" onclick="handleLogin()" style="margin-bottom: 10px;">تسجيل الدخول</button>
+                <button class="btn btn-secondary" onclick="handleRegister()">إنشاء حساب جديد</button>
+            </div>
         </div>
 
-        <!-- 2. لوحة التحكم والمحفظة الرئيسية -->
+        <!-- 2. لوحة التحكم وواجهة اللعبة المدمجة -->
         <div id="dashboard-section" class="card hidden">
-            
-            <div class="user-info-bar">
-                <span>👤 المستخدم:</span>
-                <strong id="lbl-email" style="color: var(--accent-color);">---</strong>
+            <div class="dashboard-header">
+                <h2>أهلاً بك، <span id="user-display-name" style="color: var(--accent-color);">...</span></h2>
             </div>
 
+            <!-- بطاقات الإحصائيات -->
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="label">رصيد النقاط</div>
-                    <div class="value" id="lbl-points">0</div>
+                    <div class="stat-title">الرصيد المالي</div>
+                    <div class="stat-value"><span id="val-balance">0.00</span> <small style="font-size: 12px;">ر.س</small></div>
                 </div>
                 <div class="stat-card">
-                    <div class="label">كود الإحالة الخاص بك</div>
-                    <div class="value" id="lbl-my-code" style="font-size: 15px; color: var(--success-color);">---</div>
+                    <div class="stat-title">رصيد النقاط</div>
+                    <div class="stat-value" style="color: var(--warning-color);" id="val-points">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">كود الإحالة</div>
+                    <div class="stat-value" style="font-size: 16px; color: var(--text-main);" id="val-ref-code">---</div>
                 </div>
             </div>
 
-            <div class="text-center">
+            <!-- حالة الاشتراك -->
+            <div style="text-align: center;">
                 <div id="lbl-sub-badge" class="status-badge status-inactive">حالة الاشتراك: غير مفعل</div>
+                <div id="timer-box" class="hidden" style="margin-bottom: 15px;">
+                    <span style="font-size: 13px; color: var(--text-muted);">الوقت المتبقي للصلاحية: </span>
+                    <span id="countdown" style="font-weight: bold; color: var(--success-color);">00:00:00</span>
+                </div>
             </div>
 
-            <div id="timer-box" class="hidden text-center">
-                <div style="font-size: 13px; color: var(--text-muted);">الوقت المتبقي لانتهاء صلاحية اللعب:</div>
-                <div id="countdown" class="countdown-timer">00:00:00</div>
+            <!-- خانة الاسم المعرف للعب -->
+            <div class="input-group">
+                <label>اسم اللاعب في اللعبة (Nickname)</label>
+                <input type="text" tabindex="0" autofocus placeholder="أدخل اسمك في اللعبة" id="playerNameInput" maxlength="25" />
+                <b class="input-error" style="color: var(--danger-color); font-size: 12px; display: none;">الاسم يجب أن يحتوي على حروف وأرقام فقط!</b>
             </div>
 
-            <button id="btn-activate" class="btn-success" style="margin-bottom: 10px;" onclick="confirmActivation()">تفعيل 24 ساعة لعب (10 نقاط)</button>
-            
-            <!-- زر التوجيه للألعاب -->
-            <button id="btn-play" class="btn-primary hidden" style="background: linear-gradient(135deg, #2563eb, #9333ea);" onclick="window.location.href='/game.html'">دخول إلى الألعاب 🎮</button>
+            <!-- أزرار اللعب والتحكم الأساسية -->
+            <div style="margin-bottom: 15px;">
+                <button id="btn-activate" class="btn btn-success" style="margin-bottom: 10px;" onclick="confirmActivation()">⚡ تفعيل 24 ساعة لعب (10 نقاط)</button>
+                
+                <div class="grid-buttons">
+                    <a onclick="document.getElementById('spawn_cell').play(); launchGame();" class="btn btn-primary" style="background: linear-gradient(135deg, #2563eb, #9333ea);">
+                        <button id="startButton" style="background:none; border:none; color:white; font-weight:bold; cursor:pointer; width:100%;">🎮 بدء اللعب (Play)</button>
+                    </a>
+                    <button id="spectateButton" class="btn btn-secondary" onclick="launchSpectate()">👁️ مشاهدة (Spectate)</button>
+                </div>
+
+                <button id="settingsButton" class="btn btn-secondary" onclick="toggleSettings()" style="margin-top: 5px;">⚙️ الإعدادات (Settings)</button>
+            </div>
+
+            <!-- خيارات الإعدادات المدمجة -->
+            <div id="settings" class="settings-box hidden">
+                <h3 style="margin-bottom: 10px; font-size: 16px;">إعدادات اللعبة</h3>
+                <label><input id="visBord" type="checkbox"> Show border (إظهار الحدود)</label>
+                <label><input id="showMass" type="checkbox"> Show mass (إظهار الكتلة)</label>
+                <label><input id="continuity" type="checkbox"> Continue moving when mouse is off-screen</label>
+                <label><input id="roundFood" type="checkbox" checked> Rounded food (طعام دائري)</label>
+                <label><input id="darkMode" type="checkbox"> Toggle Dark Mode (الوضع الليلي)</label>
+            </div>
 
             <div class="divider"></div>
 
-            <h3 style="font-size: 16px; margin-bottom: 12px; text-align: center;">تحويل نقاط (الحد الأدنى 50)</h3>
-            
+            <!-- تحويل النقاط -->
+            <h3 style="font-size: 16px; margin-bottom: 12px; text-align: center;">تحويل نقاط لصديق</h3>
             <div class="input-group">
                 <input type="email" id="receiver-email" placeholder="البريد الإلكتروني للمستلم">
             </div>
             <div class="input-group">
-                <input type="number" id="transfer-amount" placeholder="عدد النقاط">
+                <input type="number" id="transfer-amount" placeholder="عدد النقاط (الحد الأدنى 50)">
             </div>
-            
-            <button id="btn-transfer" class="btn-warning" onclick="confirmTransfer()">تحويل النقاط الآن</button>
+            <button class="btn btn-warning" onclick="confirmTransfer()">تحويل النقاط الآن</button>
             <div id="transfer-msg-box" class="msg-box hidden"></div>
 
             <div class="divider"></div>
 
-            <button class="btn-danger" onclick="logout()">تسجيل الخروج</button>
+            <button class="btn btn-danger" onclick="logout()">تسجيل الخروج</button>
         </div>
 
     </div>
 
+    <!-- JS السكريبتات الأساسية -->
+    <script src="//code.jquery.com/jquery-2.2.0.min.js"></script>
+    <script src="js/app.js"></script>
+
     <script>
-        const SUPABASE_URL = 'https://pttwrjtundpjpabrehxw.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dHdyanR1bmRwanBhYnJlaHh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc1OTAzMzUsImV4cCI6MjEwMzE2NjMzNX0.rYDYpwsMxG5-ifqFTNObYBfpjF43mXSaKonCWlzwt60';
-        
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-            auth: {
-                persistSession: true,
-                autoRefreshToken: true,
-                detectSessionInUrl: true
-            }
-        });
+        // تهيئة Supabase
+        const SUPABASE_URL = "YOUR_SUPABASE_URL";
+        const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let currentUserData = null;
-        let countdownInterval = null;
-        let isRegisterMode = false;
-        let isForgotMode = false;
+        let timerInterval = null;
 
-        window.addEventListener('DOMContentLoaded', async () => {
-            const hash = window.location.hash;
-            if (hash && hash.includes('type=recovery')) {
-                document.getElementById('loading-section').classList.add('hidden');
-                document.getElementById('reset-password-section').classList.remove('hidden');
-                return;
-            }
-
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session && session.user) {
-                fetchUserData(session.user.email);
-            } else {
-                document.getElementById('loading-section').classList.add('hidden');
-                document.getElementById('auth-section').classList.remove('hidden');
+        document.addEventListener("DOMContentLoaded", async function() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                loadUserData(session.user);
             }
         });
 
-        function showMessage(elementId, text, isError = true) {
-            const el = document.getElementById(elementId);
-            el.innerText = text;
-            el.className = `msg-box ${isError ? 'msg-error' : 'msg-success'}`;
-            el.classList.remove('hidden');
-        }
+        async function handleLogin() {
+            const email = document.getElementById("auth-email").value.trim();
+            const password = document.getElementById("auth-password").value;
+            showAuthMsg("");
 
-        function clearMessage(elementId) {
-            const el = document.getElementById(elementId);
-            el.innerText = "";
-            el.classList.add('hidden');
-        }
-
-        function toggleMode() {
-            isRegisterMode = !isRegisterMode;
-            isForgotMode = false;
-            document.getElementById('auth-title').innerText = isRegisterMode ? "إنشاء حساب جديد" : "تسجيل الدخول";
-            document.getElementById('main-btn').innerText = isRegisterMode ? "إنشاء حساب" : "دخول";
-            document.getElementById('toggle-mode').innerText = isRegisterMode ? "لديك حساب بالفعل؟ سجل دخولك" : "ليس لديك حساب؟ إنشاء حساب جديد";
-            document.getElementById('forgot-password-link').style.display = isRegisterMode ? "none" : "inline-block";
-            document.getElementById('pass-group').style.display = "block";
-            document.getElementById('ref-group').classList.toggle('hidden', !isRegisterMode);
-            clearMessage('auth-msg-box');
-        }
-
-        function showForgotPassword() {
-            isForgotMode = true;
-            isRegisterMode = false;
-            document.getElementById('auth-title').innerText = "استعادة كلمة المرور";
-            document.getElementById('main-btn').innerText = "إرسال رابط الاستعادة";
-            document.getElementById('pass-group').style.display = "none";
-            document.getElementById('ref-group').classList.add('hidden');
-            document.getElementById('toggle-mode').innerText = "العودة لتسجيل الدخول";
-            document.getElementById('forgot-password-link').style.display = "none";
-            clearMessage('auth-msg-box');
-        }
-
-        async function handleAuth() {
-            const email = document.getElementById('email').value.trim().toLowerCase();
-            const password = document.getElementById('pincode').value.trim();
-            const refInput = document.getElementById('ref-input').value.trim().toUpperCase();
-            const mainBtn = document.getElementById('main-btn');
-
-            clearMessage('auth-msg-box');
-            mainBtn.disabled = true;
-
-            if (!email) {
-                showMessage('auth-msg-box', "الرجاء إدخال البريد الإلكتروني.");
-                mainBtn.disabled = false;
-                return;
-            }
-
-            if (isForgotMode) {
-                const currentRedirectUrl = window.location.href.split('#')[0];
-                const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-                    redirectTo: currentRedirectUrl,
-                });
-
-                mainBtn.disabled = false;
-                if (error) {
-                    showMessage('auth-msg-box', "خطأ: " + error.message);
-                } else {
-                    showMessage('auth-msg-box', "تم إرسال رابط استعادة كلمة المرور لبريدك الإلكتروني.", false);
-                }
-                return;
-            }
-
-            if (!password) {
-                showMessage('auth-msg-box', "الرجاء إدخال كلمة المرور.");
-                mainBtn.disabled = false;
-                return;
-            }
-
-            if (isRegisterMode) {
-                const { data: authData, error: authError } = await supabaseClient.auth.signUp({
-                    email: email,
-                    password: password
-                });
-
-                if (authError) {
-                    showMessage('auth-msg-box', "خطأ في التسجيل: " + authError.message);
-                    mainBtn.disabled = false;
-                    return;
-                }
-
-                const myNewRefCode = 'REF-' + Math.floor(100000 + Math.random() * 900000);
-                
-                let validReferrerCode = null;
-                if (refInput && refInput !== myNewRefCode) {
-                    let { data: refUser } = await supabaseClient
-                        .from('users')
-                        .select('referral_code')
-                        .eq('referral_code', refInput)
-                        .maybeSingle();
-                    if (refUser) validReferrerCode = refUser.referral_code;
-                }
-
-                const { error: dbError } = await supabaseClient.from('users').insert([{
-                    username: email,
-                    pin_code: password,
-                    points: 10,
-                    referral_code: myNewRefCode,
-                    referred_by: validReferrerCode,
-                    referral_bonus_claimed: false
-                }]);
-
-                mainBtn.disabled = false;
-                if (dbError) {
-                    showMessage('auth-msg-box', "حدث خطأ أثناء حفظ البيانات: " + dbError.message);
-                } else {
-                    showMessage('auth-msg-box', "تم إنشاء الحساب! يرجى تأكيد البريد الإلكتروني ثم تسجيل الدخول.", false);
-                }
-            } else {
-                const { error } = await supabaseClient.auth.signInWithPassword({
-                    email: email,
-                    password: password
-                });
-
-                mainBtn.disabled = false;
-                if (error) {
-                    showMessage('auth-msg-box', "فشل تسجيل الدخول: تحقق من صحة البيانات.");
-                    return;
-                }
-
-                fetchUserData(email);
-            }
-        }
-
-        async function updateNewPassword() {
-            const newPassword = document.getElementById('new-password').value.trim();
-            const resetBtn = document.getElementById('btn-reset-pass');
-            
-            if (!newPassword || newPassword.length < 6) {
-                showMessage('reset-msg-box', "كلمة المرور يجب أن لا تقل عن 6 أحرف.");
-                return;
-            }
-
-            resetBtn.disabled = true;
-            const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
-
-            resetBtn.disabled = false;
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
             if (error) {
-                showMessage('reset-msg-box', "فشل التحديث: " + error.message);
+                showAuthMsg(error.message, true);
             } else {
-                showMessage('reset-msg-box', "تم تحديث كلمة المرور بنجاح! جاري التوجيه...", false);
-                setTimeout(() => {
-                    window.location.href = window.location.href.split('#')[0];
-                }, 2000);
+                loadUserData(data.user);
             }
         }
 
-        async function fetchUserData(email) {
-            let { data: user } = await supabaseClient
-                .from('users')
-                .select('*')
-                .eq('username', email)
-                .maybeSingle();
+        async function handleRegister() {
+            const email = document.getElementById("auth-email").value.trim();
+            const password = document.getElementById("auth-password").value;
+            showAuthMsg("");
 
-            if (user) {
-                currentUserData = user;
-                updateUI();
+            const { data, error } = await supabase.auth.signUp({ email, password });
+            if (error) {
+                showAuthMsg(error.message, true);
             } else {
-                document.getElementById('loading-section').classList.add('hidden');
-                document.getElementById('auth-section').classList.remove('hidden');
-                showMessage('auth-msg-box', "بيانات المستخدم غير مكتملة في قاعدة البيانات.");
+                showAuthMsg("تم إنشاء الحساب! يرجى تسجيل الدخول الان.", false);
             }
         }
 
-        async function refreshUserData() {
-            let { data: user } = await supabaseClient
-                .from('users')
-                .select('*')
-                .eq('id', currentUserData.id)
-                .single();
-            if (user) {
-                currentUserData = user;
-                updateUI();
+        async function loadUserData(user) {
+            localStorage.setItem("userEmail", user.email);
+            document.getElementById("auth-section").classList.add("hidden");
+            document.getElementById("dashboard-section").classList.remove("hidden");
+            document.getElementById("user-display-name").innerText = user.email.split('@')[0];
+            document.getElementById("playerNameInput").value = user.email.split('@')[0];
+
+            const { data } = await supabase.from('users').select('*').eq('id', user.id).single();
+            if (data) {
+                currentUserData = data;
+                document.getElementById("val-balance").innerText = data.balance ? data.balance.toFixed(2) : "0.00";
+                document.getElementById("val-points").innerText = data.points || 0;
+                document.getElementById("val-ref-code").innerText = data.referral_code || "---";
+                updateSubscriptionUI(data.subscription_expires_at);
             }
         }
 
-        function updateUI() {
-            document.getElementById('loading-section').classList.add('hidden');
-            document.getElementById('auth-section').classList.add('hidden');
-            document.getElementById('reset-password-section').classList.add('hidden');
-            document.getElementById('dashboard-section').classList.remove('hidden');
+        function updateSubscriptionUI(expiresAt) {
+            const badge = document.getElementById("lbl-sub-badge");
+            const timerBox = document.getElementById("timer-box");
             
-            document.getElementById('lbl-email').innerText = currentUserData.username;
-            document.getElementById('lbl-points').innerText = currentUserData.points;
-            document.getElementById('lbl-my-code').innerText = currentUserData.referral_code || "لا يوجد";
+            if (!expiresAt) return;
 
+            const expiry = new Date(expiresAt);
             const now = new Date();
-            const subExpiry = currentUserData.subscription_expires_at ? new Date(currentUserData.subscription_expires_at) : null;
-            const subBadge = document.getElementById('lbl-sub-badge');
-            const btnPlay = document.getElementById('btn-play');
-            const timerBox = document.getElementById('timer-box');
 
-            if (countdownInterval) clearInterval(countdownInterval);
-
-            if (subExpiry && subExpiry > now) {
-                subBadge.innerText = "حالة الاشتراك: نشط ومفعل 🟢";
-                subBadge.className = "status-badge status-active";
-                btnPlay.classList.remove('hidden');
-                timerBox.classList.remove('hidden');
-                startCountdown(subExpiry);
+            if (expiry > now) {
+                badge.className = "status-badge status-active";
+                badge.innerText = "حالة الاشتراك: مفعل 🟢";
+                timerBox.classList.remove("hidden");
+                startTimer(expiry);
             } else {
-                subBadge.innerText = "حالة الاشتراك: غير مفعل 🔴";
-                subBadge.className = "status-badge status-inactive";
-                btnPlay.classList.add('hidden');
-                timerBox.classList.add('hidden');
+                badge.className = "status-badge status-inactive";
+                badge.innerText = "حالة الاشتراك: غير مفعل 🔴";
+                timerBox.classList.add("hidden");
             }
         }
 
-        function startCountdown(expiryDate) {
-            const countdownEl = document.getElementById('countdown');
-            countdownInterval = setInterval(() => {
-                const now = new Date();
-                const distance = expiryDate - now;
-                if (distance <= 0) {
-                    clearInterval(countdownInterval);
-                    updateUI();
+        function startTimer(expiryDate) {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                const now = new Date().getTime();
+                const distance = new Date(expiryDate).getTime() - now;
+
+                if (distance < 0) {
+                    clearInterval(timerInterval);
+                    document.getElementById("countdown").innerText = "EXPIRED";
+                    updateSubscriptionUI(null);
                     return;
                 }
+
                 const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
                 const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-                countdownEl.innerText = String(hours).padStart(2, '0') + ":" + String(minutes).padStart(2, '0') + ":" + String(seconds).padStart(2, '0');
+
+                document.getElementById("countdown").innerText = 
+                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             }, 1000);
         }
 
         function launchGame() {
-    if (currentUserData && currentUserData.email) {
-        // حفظ البريد في LocalStorage لتقرأه اللعبة
-        localStorage.setItem("userEmail", currentUserData.email);
-        // التوجيه للعبة
-        window.location.href = "/game.html";
-    } else {
-        alert("يرجى تسجيل الدخول أولاً!");
-    }
-}
-        function confirmActivation() {
+            if (!currentUserData) return;
             const now = new Date();
             const subExpiry = currentUserData.subscription_expires_at ? new Date(currentUserData.subscription_expires_at) : null;
+
             if (subExpiry && subExpiry > now) {
-                alert("اشتراكك لا يزال سارياً!");
-                return;
-            }
-            if (currentUserData.points < 10) {
-                alert("رصيد النقاط غير كافٍ! يلزمك 10 نقاط.");
-                return;
-            }
-            if (confirm("هل تريد خصم 10 نقاط لتفعيل 24 ساعة لعب؟")) {
-                activateSubscription();
+                document.querySelector(".main-container").classList.add("hidden");
+                document.getElementById("gameAreaWrapper").classList.remove("hidden");
+            } else {
+                alert("اشتراكك غير مفعل! يرجى تفعيل يوم لعب أولاً برصيد 10 نقاط.");
             }
         }
 
-        async function activateSubscription() {
-            const btnActivate = document.getElementById('btn-activate');
-            btnActivate.disabled = true;
-
-            const { data, error } = await supabaseClient.rpc('activate_game_subscription', {
-                user_uuid: currentUserData.id
-            });
-
-            btnActivate.disabled = false;
-
-            if (error) {
-                alert("حدث خطأ في النظام: " + error.message);
-                return;
-            }
-
-            if (!data.success) {
-                alert(data.message);
-                return;
-            }
-
-            alert("تم تفعيل اشتراكك بنجاح! 🎮");
-            refreshUserData();
+        function launchSpectate() {
+            document.querySelector(".main-container").classList.add("hidden");
+            document.getElementById("gameAreaWrapper").classList.remove("hidden");
         }
 
-        function confirmTransfer() {
-            const receiverEmail = document.getElementById('receiver-email').value.trim().toLowerCase();
-            const amount = parseInt(document.getElementById('transfer-amount').value);
-            clearMessage('transfer-msg-box');
-
-            if (!receiverEmail || isNaN(amount)) {
-                showMessage('transfer-msg-box', "يرجى إدخال بيانات تحويل صحيحة.");
-                return;
-            }
-            
-            if (amount < 50) {
-                showMessage('transfer-msg-box', "الحد الأدنى للتحويل هو 50 نقطة.");
-                return;
-            }
-
-            if (currentUserData.points < amount) {
-                showMessage('transfer-msg-box', "رصيدك غير كافٍ لإتمام التحويل.");
-                return;
-            }
-            if (receiverEmail === currentUserData.username) {
-                showMessage('transfer-msg-box', "لا يمكنك التحويل لنفسك.");
-                return;
-            }
-
-            if (confirm(`هل تؤكد تحويل ${amount} نقطة إلى ${receiverEmail}؟`)) {
-                executeTransfer(receiverEmail, amount);
-            }
-        }
-
-        async function executeTransfer(receiverEmail, amount) {
-            const btnTransfer = document.getElementById('btn-transfer');
-            btnTransfer.disabled = true;
-
-            const { data, error } = await supabaseClient.rpc('transfer_user_points', {
-                sender_uuid: currentUserData.id,
-                receiver_email: receiverEmail,
-                amount: parseInt(amount)
-            });
-
-            btnTransfer.disabled = false;
-
-            if (error) {
-                showMessage('transfer-msg-box', "حدث خطأ بالتحويل: " + error.message);
-                return;
-            }
-
-            if (!data.success) {
-                showMessage('transfer-msg-box', data.message);
-                return;
-            }
-
-            showMessage('transfer-msg-box', "تم تحويل النقاط بنجاح! 🎯", false);
-            document.getElementById('receiver-email').value = '';
-            document.getElementById('transfer-amount').value = '';
-            refreshUserData();
+        function toggleSettings() {
+            document.getElementById("settings").classList.toggle("hidden");
         }
 
         async function logout() {
-            await supabaseClient.auth.signOut();
-            if (countdownInterval) clearInterval(countdownInterval);
-            currentUserData = null;
-            document.getElementById('dashboard-section').classList.add('hidden');
-            document.getElementById('auth-section').classList.remove('hidden');
+            await supabase.auth.signOut();
+            localStorage.removeItem("userEmail");
+            location.reload();
+        }
+
+        function showAuthMsg(msg, isError) {
+            const box = document.getElementById("auth-msg");
+            if (!msg) { box.classList.add("hidden"); return; }
+            box.className = `msg-box ${isError ? 'msg-error' : 'msg-success'}`;
+            box.innerText = msg;
+            box.classList.remove("hidden");
         }
     </script>
 </body>
