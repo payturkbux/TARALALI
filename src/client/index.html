@@ -207,7 +207,6 @@
         .msg-error { background: rgba(239, 68, 68, 0.2); color: var(--danger-color); border: 1px solid var(--danger-color); }
         .msg-success { background: rgba(16, 185, 129, 0.2); color: var(--success-color); border: 1px solid var(--success-color); }
 
-        /* شريط العودة داخل سياق اللعبة */
         #game-top-bar {
             position: fixed;
             top: 10px;
@@ -235,10 +234,10 @@
         <canvas tabindex="1" id="cvs"></canvas>
     </div>
 
-    <!-- الواجهة الرئيسية المحترفة -->
+    <!-- الواجهة الرئيسية -->
     <div class="main-wrapper" id="main-ui">
 
-        <!-- 1. شاشة تسجيل الدخول / حساب جديد -->
+        <!-- 1. شاشة تسجيل الدخول -->
         <div id="auth-section" class="card">
             <div class="app-title">منصة ترلالي للألعاب - تسجيل الدخول</div>
             
@@ -260,7 +259,7 @@
             </div>
         </div>
 
-        <!-- 2. لوحة التحكم الشاملة -->
+        <!-- 2. لوحة التحكم -->
         <div id="dashboard-section" class="card hidden">
             <div class="app-title">منصة ترلالي للألعاب - لوحة التحكم الشاملة</div>
 
@@ -288,7 +287,7 @@
                     </div>
                 </div>
 
-                <!-- القسم الأيسر: الإحصائيات وتحويل النقاط -->
+                <!-- القسم الأيسر: المحفظة -->
                 <div>
                     <h3 style="margin-bottom: 15px; font-size: 18px; color: var(--accent-glow);">المحفظة والرصيد</h3>
 
@@ -329,7 +328,6 @@
     <script src="js/app.js"></script>
 
     <script>
-        // مفاتيح Supabase المباشرة الآمنة للعميل (Anon Key)
         const SUPABASE_URL = "https://gapbwgghvcjcibiumazm.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhcGJ3Z2dodmNqY2liaXVtYXptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3Mzk1MzksImV4cCI6MjEwMzMxNTUzOX0.DmbZnd6extRclfxDrZFbCW0-VudECPOc4vNSJ0F6YS8"; 
 
@@ -339,7 +337,6 @@
         let countdownTimer = null;
 
         document.addEventListener("DOMContentLoaded", () => {
-            // ربط العناصر والأحداث
             document.getElementById("btn-do-login").addEventListener("click", execLogin);
             document.getElementById("btn-do-register").addEventListener("click", execRegister);
             document.getElementById("btn-activate-sub").addEventListener("click", execActivate);
@@ -348,7 +345,6 @@
             document.getElementById("btn-do-transfer").addEventListener("click", execTransfer);
             document.getElementById("btn-do-logout").addEventListener("click", execLogout);
 
-            // فحص الجلسة الحالية
             checkCurrentSession();
         });
 
@@ -462,17 +458,24 @@
         }
 
         function execPlay() {
-            if (!userData || !userData.subscription_expires_at || new Date(userData.subscription_expires_at) <= new Date()) {
-                alert("يرجى تفعيل الاشتراك برصيد 10 نقاط أولاً للبدء بالحصول على صلاحية اللعب!");
-                return;
-            }
+            const nickName = document.getElementById("playerNameInput").value.trim() || "Player";
 
-            // تشغيل صوت بدء اللعبة الأصيل
-            document.getElementById("spawn_cell").play();
+            // تشغيل صوت بدء اللعبة بشكل آمن
+            try {
+                const sound = document.getElementById("spawn_cell");
+                if (sound) sound.play().catch(() => {});
+            } catch (e) {}
 
             // إخفاء الواجهة الرئيسية وإظهار اللعبة
             document.getElementById("main-ui").classList.add("hidden");
             document.getElementById("gameAreaWrapper").classList.remove("hidden");
+
+            // إرسال بدء اللعبة للـ Engine الأصلي (js/app.js)
+            if (typeof window.startGame === "function") {
+                window.startGame(nickName);
+            } else if (typeof window.startGame === "undefined" && typeof startGame === "function") {
+                startGame(nickName);
+            }
         }
 
         function execSpectate() {
