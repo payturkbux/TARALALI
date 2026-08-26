@@ -5,7 +5,10 @@
     <title>TARALALI | لوحة تحكم الإدارة</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap">
+    
+    <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <style>
         :root {
             --bg-admin: #090d16;
@@ -33,7 +36,7 @@
         th, td { padding: 14px 16px; border-bottom: 1px solid var(--border-color); font-size: 14px; }
         th { color: var(--text-muted); font-weight: 700; background: rgba(15, 23, 42, 0.5); }
         
-        .input-inline { width: 80px; padding: 6px; border-radius: 6px; border: 1px solid var(--border-color); background: #0f172a; color: #fff; text-align: center; }
+        .input-inline { width: 90px; padding: 6px; border-radius: 6px; border: 1px solid var(--border-color); background: #0f172a; color: #fff; text-align: center; font-weight: bold; }
         
         .btn-action { padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 13px; transition: 0.2s; }
         .btn-save { background: var(--accent-green); color: white; }
@@ -101,18 +104,27 @@
     </div>
 
     <script>
-        const SUPABASE_URL = "process.env.SUPABASE_URL"; 
-        const SUPABASE_ANON_KEY = "process.env.SUPABASE_SERVICE_KEY"; 
-        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // ⚠️ ضع هنا فقط المفتاح العادي (Anon Key) الخاص بالعميل - لا تضع Service Key إطلاقاً!
+        const SUPABASE_URL = "https://YOUR_SUPABASE_PROJECT_ID.supabase.co"; 
+        const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY"; 
+
+        let db = null;
 
         document.addEventListener("DOMContentLoaded", async () => {
+            if (!window.supabase) {
+                alert("تعذر تحميل مكتبة Supabase!");
+                return;
+            }
+
+            db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
             const { data: { session } } = await db.auth.getSession();
             if (!session) {
                 showDenied();
                 return;
             }
 
-            // فحص صلاحية الأدمن من الجدول
+            // فحص صلاحية الأدمن من جدول users
             const { data: userRecord, error } = await db.from("users").select("role").eq("id", session.user.id).single();
             if (error || !userRecord || userRecord.role !== "admin") {
                 showDenied();
@@ -126,10 +138,11 @@
 
         function showDenied() {
             document.getElementById("access-denied").classList.remove("hidden");
+            document.getElementById("admin-panel").classList.add("hidden");
         }
 
         async function loadAdminData() {
-            // استدعاء دالة RPC الآمنة لجلب كافة المستخدمين
+            // استدعاء دالة RPC الآمنة لـ الأدمن
             const { data: users, error } = await db.rpc("get_all_users_admin");
             if (error) {
                 alert("خطأ في جلب البيانات: " + error.message);
@@ -156,7 +169,7 @@
                             ${isSubActive ? 'نشط 🟢' : 'منتهي 🔴'}
                         </span>
                     </td>
-                    <td><strong>${u.role}</strong></td>
+                    <td><strong>${u.role || 'user'}</strong></td>
                     <td>
                         <button onclick="updateUserValues('${u.id}')" class="btn-action btn-save">حفظ البيانات</button>
                         <button onclick="add24hSub('${u.id}')" class="btn-action btn-sub">+24h لعب</button>
@@ -174,6 +187,11 @@
         async function updateUserValues(userId) {
             const newBalance = parseFloat(document.getElementById(`bal-${userId}`).value);
             const newPoints = parseInt(document.getElementById(`pts-${userId}`).value);
+
+            if (isNaN(newBalance) || isNaN(newPoints)) {
+                alert("يرجى إدخال أرقام صحيحة.");
+                return;
+            }
 
             const { error } = await db.from("users").update({ balance: newBalance, points: newPoints }).eq("id", userId);
             if (error) {
