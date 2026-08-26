@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>منصة ترلالي للألعاب - لوحة التحكم الشاملة</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
     <!-- CSS اللعبة والخطوط -->
     <link rel="stylesheet" href="css/main.css" />
@@ -22,7 +22,7 @@
     <style>
         :root {
             --bg-main: #0b0f19;
-            --card-bg: rgba(30, 41, 59, 0.7);
+            --card-bg: rgba(30, 41, 59, 0.75);
             --card-border: rgba(255, 255, 255, 0.1);
             --accent-glow: #3b82f6;
             --accent-purple: #9333ea;
@@ -38,6 +38,7 @@
             margin: 0;
             padding: 0;
             font-family: 'Tajawal', sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
@@ -47,7 +48,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 15px;
+            overflow-x: hidden;
         }
 
         .main-wrapper {
@@ -62,7 +64,7 @@
             -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--card-border);
             border-radius: 20px;
-            padding: 30px;
+            padding: 25px;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
             margin-bottom: 20px;
         }
@@ -74,9 +76,9 @@
             background: linear-gradient(135deg, #60a5fa, #c084fc);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            font-size: 26px;
+            font-size: 24px;
             font-weight: 800;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             padding-bottom: 10px;
             border-bottom: 1px solid var(--card-border);
         }
@@ -87,18 +89,14 @@
             gap: 20px;
         }
 
-        @media (max-width: 768px) {
-            .grid-2 { grid-template-columns: 1fr; }
-        }
-
         .input-group {
-            margin-bottom: 18px;
+            margin-bottom: 16px;
             text-align: right;
         }
 
         .input-group label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             font-size: 14px;
             color: var(--text-muted);
             font-weight: 500;
@@ -106,7 +104,7 @@
 
         .input-group input {
             width: 100%;
-            padding: 14px;
+            padding: 12px 14px;
             border-radius: 10px;
             border: 1px solid var(--card-border);
             background: rgba(15, 23, 42, 0.8);
@@ -143,7 +141,7 @@
             box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
         }
 
-        .btn-primary:hover {
+        .btn-primary:hover, .btn-primary:active {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(37, 99, 235, 0.6);
         }
@@ -154,7 +152,7 @@
             box-shadow: 0 4px 15px rgba(147, 51, 234, 0.4);
         }
 
-        .btn-game:hover {
+        .btn-game:hover, .btn-game:active {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(147, 51, 234, 0.6);
         }
@@ -168,12 +166,12 @@
             background: rgba(15, 23, 42, 0.6);
             border: 1px solid var(--card-border);
             border-radius: 14px;
-            padding: 18px;
+            padding: 15px 10px;
             text-align: center;
         }
 
         .stat-val {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 800;
             color: #fff;
             margin-top: 5px;
@@ -184,7 +182,7 @@
             background: rgba(15, 23, 42, 0.4);
             border-radius: 12px;
             padding: 15px;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             border: 1px solid var(--card-border);
         }
 
@@ -208,6 +206,17 @@
         .msg-error { background: rgba(239, 68, 68, 0.2); color: var(--danger-color); border: 1px solid var(--danger-color); }
         .msg-success { background: rgba(16, 185, 129, 0.2); color: var(--success-color); border: 1px solid var(--success-color); }
 
+        /* منطقة اللعبة وتجاوب الهاتف */
+        #gameAreaWrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 99999;
+            background: #000;
+        }
+
         #game-top-bar {
             position: fixed;
             top: 15px;
@@ -215,8 +224,87 @@
             z-index: 999999;
         }
 
+        #mobile {
+            position: fixed;
+            bottom: 25px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            z-index: 999999;
+        }
+
+        #mobile input[type="image"] {
+            pointer-events: auto;
+            width: 65px;
+            height: 65px;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        #mobile input[type="image"]:active {
+            opacity: 1;
+        }
+
+        .chatbox {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            max-width: 300px;
+            z-index: 999998;
+        }
+
         #startMenuWrapper {
             display: none !important;
+        }
+
+        /* الاستجابة للهواتف المحمولة (Responsive Design) */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .card {
+                padding: 18px;
+                border-radius: 16px;
+            }
+
+            .app-title {
+                font-size: 20px;
+                margin-bottom: 15px;
+            }
+
+            .grid-2 {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .auth-buttons-container {
+                flex-direction: column;
+                gap: 10px !important;
+            }
+
+            .stat-val {
+                font-size: 18px;
+            }
+
+            #game-top-bar {
+                top: 10px;
+                right: 10px;
+            }
+
+            #game-top-bar button {
+                padding: 6px 12px !important;
+                font-size: 12px !important;
+            }
+
+            .chatbox {
+                left: 10px;
+                bottom: 100px;
+                width: calc(100% - 20px);
+                max-width: none;
+            }
         }
     </style>
 </head>
@@ -225,7 +313,7 @@
     <!-- عناصر اللعبة الأصلية الشاملة -->
     <div id="gameAreaWrapper" class="hidden">
         <div id="game-top-bar">
-            <button onclick="exitGameToDashboard()" class="btn btn-danger" style="padding: 8px 16px; font-size: 13px;">🏠 العودة للوحة التحكم</button>
+            <button onclick="exitGameToDashboard()" class="btn btn-danger" style="padding: 8px 16px; font-size: 13px; width: auto;">🏠 العودة للوحة التحكم</button>
         </div>
         <div id="status"><span class="title">Leaderboard</span></div>
         <div class="chatbox" id="chatbox">
@@ -299,7 +387,7 @@
 
             <div id="auth-msg-box" class="msg-box hidden"></div>
 
-            <div style="margin-top: 25px; display: flex; gap: 12px;">
+            <div class="auth-buttons-container" style="margin-top: 25px; display: flex; gap: 12px;">
                 <button type="button" id="btn-do-login" class="btn btn-primary">تسجيل الدخول</button>
                 <button type="button" id="btn-do-register" class="btn btn-secondary">حساب جديد</button>
             </div>
@@ -312,7 +400,7 @@
             <div class="grid-2">
                 <!-- القسم الأيمن -->
                 <div>
-                    <h3 style="margin-bottom: 15px; font-size: 18px; color: var(--accent-glow);">دخول الألعاب واللعب الفوري</h3>
+                    <h3 style="margin-bottom: 15px; font-size: 17px; color: var(--accent-glow);">دخول الألعاب واللعب الفوري</h3>
 
                     <div class="input-group">
                         <label>الاسم داخل اللعبة</label>
@@ -335,15 +423,15 @@
 
                 <!-- القسم الأيسر -->
                 <div>
-                    <h3 style="margin-bottom: 15px; font-size: 18px; color: var(--accent-glow);">المحفظة والرصيد</h3>
+                    <h3 style="margin-bottom: 15px; font-size: 17px; color: var(--accent-glow);">المحفظة والرصيد</h3>
 
-                    <div class="grid-2" style="margin-bottom: 18px;">
+                    <div class="grid-2" style="margin-bottom: 18px; grid-template-columns: 1fr 1fr; gap: 10px;">
                         <div class="stats-card">
-                            <div style="font-size: 13px; color: var(--text-muted);">الرصيد المالـي</div>
-                            <div class="stat-val"><span id="txt-balance">0.00</span> <small style="font-size: 13px; color: var(--accent-glow);">ر.س</small></div>
+                            <div style="font-size: 12px; color: var(--text-muted);">الرصيد المالـي</div>
+                            <div class="stat-val"><span id="txt-balance">0.00</span> <small style="font-size: 12px; color: var(--accent-glow);">ر.س</small></div>
                         </div>
                         <div class="stats-card">
-                            <div style="font-size: 13px; color: var(--text-muted);">رصيد النقاط</div>
+                            <div style="font-size: 12px; color: var(--text-muted);">رصيد النقاط</div>
                             <div class="stat-val" style="color: var(--warning-color);" id="txt-points">0</div>
                         </div>
                     </div>
@@ -361,7 +449,7 @@
                 </div>
             </div>
 
-            <div style="margin-top: 30px; border-top: 1px solid var(--card-border); padding-top: 20px;">
+            <div style="margin-top: 25px; border-top: 1px solid var(--card-border); padding-top: 15px;">
                 <button type="button" id="btn-do-logout" class="btn btn-danger" style="max-width: 200px; margin: 0 auto;">🚪 تسجيل الخروج</button>
             </div>
         </div>
@@ -373,7 +461,6 @@
     <script src="js/app.js"></script>
 
     <script>
-        // ⚠️ قم بوضع روابط ومفتاح Anon العادي هنا فقط (آمن للظهور في المتصفح)
         const SUPABASE_URL = "https://gapbwgghvcjcibiumazm.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhcGJ3Z2dodmNqY2liaXVtYXptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3Mzk1MzksImV4cCI6MjEwMzMxNTUzOX0.DmbZnd6extRclfxDrZFbCW0-VudECPOc4vNSJ0F6YS8"; 
 
@@ -409,7 +496,6 @@
         }
 
         async function execLogin() {
-            // إعادة نمط الواجهة لوضع الدخول إذا تم الضغط عليه
             if (isRegisterMode) {
                 isRegisterMode = false;
                 document.getElementById("group-username").classList.add("hidden");
@@ -439,14 +525,12 @@
 
         function handleRegisterButtonClick() {
             if (!isRegisterMode) {
-                // تحويل الشاشة لوضع إنشاء الحساب وإظهار حقل اسم المستخدم
                 isRegisterMode = true;
                 document.getElementById("group-username").classList.remove("hidden");
                 document.getElementById("auth-title").innerText = "منصة ترلالي للألعاب - إنشاء حساب جديد";
                 document.getElementById("btn-do-register").innerText = "تأكيد التسجيل";
                 renderAuthMsg("");
             } else {
-                // تنفيذ عملية التسجيل الفعلية
                 execRegister();
             }
         }
@@ -498,7 +582,6 @@
                 document.getElementById("txt-balance").innerText = data.balance ? data.balance.toFixed(2) : "0.00";
                 document.getElementById("txt-points").innerText = data.points || 0;
                 
-                // إذا كان اسم المستخدم موجوداً في قاعدة البيانات نعتخده في خانة الاسم
                 if (data.username) {
                     document.getElementById("customPlayerName").value = data.username;
                 }
@@ -555,7 +638,6 @@
         }
 
         function execPlay() {
-            // فحص أمني: منع الدخول إذا لم يكن الاشتراك نشطاً
             const isSubscribed = userData && userData.subscription_expires_at && new Date(userData.subscription_expires_at) > new Date();
             
             if (!isSubscribed) {
