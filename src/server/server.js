@@ -3,9 +3,9 @@ require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 const path = require('path');
 
-const SUPABASE_URL = 'https://pttwrjtundpjpabrehxw.supabase.co';
+const SUPABASE_URL = 'process.env.SUPABASE_URL';
 // مفتاح Service Role لضمان الوصول من السيرفر
-const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dHdyanR1bmRwanBhYnJlaHh3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NzU5MDMzNSwiZXhwIjoyMTAzMTY2MzM1fQ.oQ3SacBwgG4D2bMoHTvc0Ll1ZmvJSvZAT13Et2fTm2Q';
+const SUPABASE_SERVICE_KEY = 'process.env.SUPABASE_SERVICE_KEY';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
     auth: {
