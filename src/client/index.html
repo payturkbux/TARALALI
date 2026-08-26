@@ -277,13 +277,19 @@
     <!-- الواجهة الرئيسية للمنصة -->
     <div class="main-wrapper" id="main-ui">
 
-        <!-- 1. شاشة تسجيل الدخول -->
+        <!-- 1. شاشة تسجيل الدخول وإنشاء الحساب -->
         <div id="auth-section" class="card">
-            <div class="app-title">منصة ترلالي للألعاب - تسجيل الدخول</div>
+            <div class="app-title" id="auth-title">منصة ترلالي للألعاب - تسجيل الدخول</div>
             
+            <!-- حقل اسم المستخدم (يظهر فقط أثناء إنشاء حساب جديد) -->
+            <div class="input-group hidden" id="group-username">
+                <label>اسم المستخدم (داخل اللعبة)</label>
+                <input type="text" id="auth-username" placeholder="أدخل اسمك المفضّل" dir="rtl" style="text-align: right;">
+            </div>
+
             <div class="input-group">
-                <label>البريد الإلكتروني</label>
-                <input type="email" id="auth-email" placeholder="example.user@email.com" dir="ltr" style="text-align: left;">
+                <label>رقم الهاتف</label>
+                <input type="tel" id="auth-phone" placeholder="+9665xxxxxxxx أو +905xxxxxxxxx" dir="ltr" style="text-align: left;">
             </div>
 
             <div class="input-group">
@@ -345,7 +351,7 @@
                     <div style="background: rgba(15, 23, 42, 0.4); padding: 15px; border-radius: 12px; border: 1px solid var(--card-border);">
                         <h4 style="font-size: 15px; margin-bottom: 12px; text-align: center;">تحويل النقاط</h4>
                         <div class="input-group">
-                            <input type="email" id="transfer-receiver" placeholder="البريد الإلكتروني للمستلم" dir="ltr" style="text-align: left; font-size: 13px;">
+                            <input type="tel" id="transfer-receiver" placeholder="رقم هاتف المستلم" dir="ltr" style="text-align: left; font-size: 13px;">
                         </div>
                         <div class="input-group">
                             <input type="number" id="transfer-amount" placeholder="عدد النقاط (الحد الأدنى 50)" style="font-size: 13px;">
@@ -375,6 +381,7 @@
         let currentUser = null;
         let userData = null;
         let countdownTimer = null;
+        let isRegisterMode = false;
 
         document.addEventListener("DOMContentLoaded", () => {
             if (window.supabase) {
@@ -385,7 +392,7 @@
             }
 
             document.getElementById("btn-do-login").addEventListener("click", execLogin);
-            document.getElementById("btn-do-register").addEventListener("click", execRegister);
+            document.getElementById("btn-do-register").addEventListener("click", handleRegisterButtonClick);
             document.getElementById("btn-activate-sub").addEventListener("click", execActivate);
             document.getElementById("btn-launch-play").addEventListener("click", execPlay);
             document.getElementById("btn-launch-spectate").addEventListener("click", execSpectate);
@@ -402,16 +409,26 @@
         }
 
         async function execLogin() {
-            const email = document.getElementById("auth-email").value.trim();
-            const password = document.getElementById("auth-password").value;
-            renderAuthMsg("");
-
-            if (!email || !password) {
-                renderAuthMsg("يرجى إدخال البريد الإلكتروني وكلمة المرور.", true);
+            // إعادة نمط الواجهة لوضع الدخول إذا تم الضغط عليه
+            if (isRegisterMode) {
+                isRegisterMode = false;
+                document.getElementById("group-username").classList.add("hidden");
+                document.getElementById("auth-title").innerText = "منصة ترلالي للألعاب - تسجيل الدخول";
+                document.getElementById("btn-do-register").innerText = "حساب جديد";
+                renderAuthMsg("");
                 return;
             }
 
-            const { data, error } = await db.auth.signInWithPassword({ email, password });
+            const phone = document.getElementById("auth-phone").value.trim();
+            const password = document.getElementById("auth-password").value;
+            renderAuthMsg("");
+
+            if (!phone || !password) {
+                renderAuthMsg("يرجى إدخال رقم الهاتف وكلمة المرور.", true);
+                return;
+            }
+
+            const { data, error } = await db.auth.signInWithPassword({ phone, password });
             if (error) {
                 renderAuthMsg(error.message, true);
             } else {
@@ -420,37 +437,72 @@
             }
         }
 
+        function handleRegisterButtonClick() {
+            if (!isRegisterMode) {
+                // تحويل الشاشة لوضع إنشاء الحساب وإظهار حقل اسم المستخدم
+                isRegisterMode = true;
+                document.getElementById("group-username").classList.remove("hidden");
+                document.getElementById("auth-title").innerText = "منصة ترلالي للألعاب - إنشاء حساب جديد";
+                document.getElementById("btn-do-register").innerText = "تأكيد التسجيل";
+                renderAuthMsg("");
+            } else {
+                // تنفيذ عملية التسجيل الفعلية
+                execRegister();
+            }
+        }
+
         async function execRegister() {
-            const email = document.getElementById("auth-email").value.trim();
+            const username = document.getElementById("auth-username").value.trim();
+            const phone = document.getElementById("auth-phone").value.trim();
             const password = document.getElementById("auth-password").value;
             renderAuthMsg("");
 
-            if (!email || !password) {
-                renderAuthMsg("يرجى إدخال البيانات كاملة للتسجيل.", true);
+            if (!username || !phone || !password) {
+                renderAuthMsg("يرجى إدخال جميع البيانات (اسم المستخدم، رقم الهاتف، وكلمة المرور).", true);
                 return;
             }
 
-            const { data, error } = await db.auth.signUp({ email, password });
+            const { data, error } = await db.auth.signUp({ 
+                phone, 
+                password,
+                options: {
+                    data: { username: username }
+                }
+            });
+
             if (error) {
                 renderAuthMsg(error.message, true);
             } else {
-                renderAuthMsg("تم إنشاء الحساب بنجاح! يمكنك الدخول الآن.", false);
+                renderAuthMsg("تم إنشاء الحساب بنجاح! يمكنك تسجيل الدخول الآن.", false);
+                isRegisterMode = false;
+                document.getElementById("group-username").classList.add("hidden");
+                document.getElementById("auth-title").innerText = "منصة ترلالي للألعاب - تسجيل الدخول";
+                document.getElementById("btn-do-register").innerText = "حساب جديد";
             }
         }
 
         async function loadDashboard() {
             if (!currentUser) return;
 
-            localStorage.setItem("userEmail", currentUser.email);
+            const userPhone = currentUser.phone || currentUser.user_metadata?.phone || "";
+            const defaultName = currentUser.user_metadata?.username || userPhone || "Player";
+
+            localStorage.setItem("userPhone", userPhone);
             document.getElementById("auth-section").classList.add("hidden");
             document.getElementById("dashboard-section").classList.remove("hidden");
-            document.getElementById("customPlayerName").value = currentUser.email.split('@')[0];
+            document.getElementById("customPlayerName").value = defaultName;
 
             const { data, error } = await db.from("users").select("*").eq("id", currentUser.id).single();
             if (data) {
                 userData = data;
                 document.getElementById("txt-balance").innerText = data.balance ? data.balance.toFixed(2) : "0.00";
                 document.getElementById("txt-points").innerText = data.points || 0;
+                
+                // إذا كان اسم المستخدم موجوداً في قاعدة البيانات نعتخده في خانة الاسم
+                if (data.username) {
+                    document.getElementById("customPlayerName").value = data.username;
+                }
+
                 renderSubscriptionStatus(data.subscription_expires_at);
             }
         }
@@ -536,17 +588,17 @@
         }
 
         async function execTransfer() {
-            const receiver = document.getElementById("transfer-receiver").value.trim();
+            const receiverPhone = document.getElementById("transfer-receiver").value.trim();
             const amount = parseInt(document.getElementById("transfer-amount").value);
 
-            if (!receiver || isNaN(amount) || amount < 50) {
-                alert("يرجى إدخال بريد مستلم صحيح وأن لا يقل عدد النقاط عن 50 نقطة.");
+            if (!receiverPhone || isNaN(amount) || amount < 50) {
+                alert("يرجى إدخال رقم هاتف المستلم وأن لا يقل عدد النقاط عن 50 نقطة.");
                 return;
             }
 
-            const { error } = await db.rpc("transfer_points", { 
+            const { error } = await db.rpc("transfer_points_by_phone", { 
                 sender_id: currentUser.id, 
-                receiver_email: receiver, 
+                receiver_phone: receiverPhone, 
                 points_to_transfer: amount 
             });
 
@@ -560,7 +612,7 @@
 
         async function execLogout() {
             await db.auth.signOut();
-            localStorage.removeItem("userEmail");
+            localStorage.removeItem("userPhone");
             location.reload();
         }
 
