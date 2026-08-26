@@ -2,10 +2,10 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>TARALALI | منصة الألعاب والمحفظة الرقمية</title>
+    <title>منصة ترلالي للالعاب - لوحة التحكم الشاملة</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <!-- CSS الخاص باللعبة والخطوط -->
+    <!-- CSS اللعبة والخطوط -->
     <link rel="stylesheet" href="css/main.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,17 +14,17 @@
     <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <!-- Audio Elements الأصيلة -->
+    <!-- الأصوات الخاصة باللعبة -->
     <audio id="split_cell" src="audio/split.mp3"></audio>
     <audio id="spawn_cell" src="audio/spawn.mp3"></audio>
 
     <style>
         :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --card-border: #334155;
-            --accent-color: #3b82f6;
-            --accent-hover: #2563eb;
+            --bg-main: #0b0f19;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --accent-glow: #3b82f6;
+            --accent-purple: #9333ea;
             --success-color: #10b981;
             --warning-color: #f59e0b;
             --danger-color: #ef4444;
@@ -36,160 +36,193 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Tajawal', Tahoma, sans-serif;
+            font-family: 'Tajawal', sans-serif;
         }
 
         body {
-            background-color: var(--bg-color);
+            background: radial-gradient(circle at top, #1e1b4b 0%, var(--bg-main) 100%);
             color: var(--text-main);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 15px;
-            overflow-x: hidden;
+            padding: 20px;
         }
 
-        .main-container {
+        .main-wrapper {
             width: 100%;
-            max-width: 900px;
+            max-width: 960px;
             z-index: 10;
         }
 
         .card {
             background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--card-border);
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
             margin-bottom: 20px;
         }
 
         .hidden { display: none !important; }
 
-        .auth-header, .dashboard-header {
+        .app-title {
             text-align: center;
-            margin-bottom: 20px;
+            background: linear-gradient(135deg, #60a5fa, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 26px;
+            font-weight: 800;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--card-border);
         }
 
-        .auth-header h1, .dashboard-header h1 {
-            font-size: 24px;
-            color: var(--accent-color);
-            font-weight: 800;
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2 { grid-template-columns: 1fr; }
         }
 
         .input-group {
-            margin-bottom: 15px;
+            margin-bottom: 18px;
             text-align: right;
         }
 
         .input-group label {
             display: block;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
             font-size: 14px;
             color: var(--text-muted);
+            font-weight: 500;
         }
 
         .input-group input {
             width: 100%;
-            padding: 12px;
-            border-radius: 8px;
+            padding: 14px;
+            border-radius: 10px;
             border: 1px solid var(--card-border);
-            background: rgba(15, 23, 42, 0.6);
+            background: rgba(15, 23, 42, 0.8);
             color: var(--text-main);
             font-size: 15px;
             outline: none;
-            direction: ltr;
-            text-align: right;
+            transition: all 0.3s ease;
         }
 
         .input-group input:focus {
-            border-color: var(--accent-color);
+            border-color: var(--accent-glow);
+            box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
         }
 
         .btn {
             width: 100%;
-            padding: 12px;
+            padding: 14px;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 16px;
             font-weight: 700;
             cursor: pointer;
-            transition: all 0.2s ease;
-            display: inline-block;
-            text-align: center;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
             text-decoration: none;
         }
 
-        .btn-primary { background: var(--accent-color); color: white; }
-        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-glow), #2563eb);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.6);
+        }
+
+        .btn-game {
+            background: linear-gradient(135deg, var(--accent-glow), var(--accent-purple));
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(147, 51, 234, 0.4);
+        }
+
+        .btn-game:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(147, 51, 234, 0.6);
+        }
+
         .btn-success { background: var(--success-color); color: white; }
         .btn-warning { background: var(--warning-color); color: white; }
         .btn-danger { background: var(--danger-color); color: white; }
-        .btn-secondary { background: #475569; color: white; }
+        .btn-secondary { background: #334155; color: white; }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .stat-card {
-            background: rgba(15, 23, 42, 0.4);
+        .stats-card {
+            background: rgba(15, 23, 42, 0.6);
             border: 1px solid var(--card-border);
-            border-radius: 12px;
-            padding: 15px;
+            border-radius: 14px;
+            padding: 18px;
             text-align: center;
         }
 
-        .stat-title { font-size: 13px; color: var(--text-muted); margin-bottom: 5px; }
-        .stat-value { font-size: 22px; font-weight: 800; color: var(--accent-color); }
+        .stat-val {
+            font-size: 24px;
+            font-weight: 800;
+            color: #fff;
+            margin-top: 5px;
+        }
 
-        .status-badge {
+        .sub-status-box {
+            text-align: center;
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid var(--card-border);
+        }
+
+        .badge {
             display: inline-block;
-            padding: 6px 16px;
+            padding: 6px 18px;
             border-radius: 50px;
             font-size: 14px;
-            font-weight: bold;
-            margin-bottom: 15px;
+            font-weight: 700;
         }
+        .badge-active { background: rgba(16, 185, 129, 0.2); color: var(--success-color); border: 1px solid var(--success-color); }
+        .badge-inactive { background: rgba(239, 68, 68, 0.2); color: var(--danger-color); border: 1px solid var(--danger-color); }
 
-        .status-active { background: rgba(16, 185, 129, 0.2); color: var(--success-color); border: 1px solid var(--success-color); }
-        .status-inactive { background: rgba(239, 68, 68, 0.2); color: var(--danger-color); border: 1px solid var(--danger-color); }
-
-        .grid-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .settings-box {
-            background: rgba(15, 23, 42, 0.4);
+        .msg-box {
+            padding: 12px;
             border-radius: 8px;
-            padding: 15px;
-            margin-top: 15px;
-            text-align: right;
-        }
-
-        .settings-box label {
-            display: block;
-            margin: 8px 0;
-            cursor: pointer;
             font-size: 14px;
+            text-align: center;
+            margin-top: 15px;
         }
+        .msg-error { background: rgba(239, 68, 68, 0.2); color: var(--danger-color); border: 1px solid var(--danger-color); }
+        .msg-success { background: rgba(16, 185, 129, 0.2); color: var(--success-color); border: 1px solid var(--success-color); }
 
-        .divider { height: 1px; background: var(--card-border); margin: 20px 0; }
-        .msg-box { padding: 10px; border-radius: 6px; font-size: 14px; margin-top: 10px; text-align: center; }
-        .msg-error { background: rgba(239, 68, 68, 0.2); color: var(--danger-color); }
-        .msg-success { background: rgba(16, 185, 129, 0.2); color: var(--success-color); }
+        /* شريط العودة داخل سياق اللعبة */
+        #game-top-bar {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 99999;
+        }
     </style>
 </head>
 <body>
 
-    <!-- حاوية اللعبة الأصلية (تكون مخفية عند فتح البوابة) -->
+    <!-- حاوية اللعبة المباشرة -->
     <div id="gameAreaWrapper" class="hidden">
+        <div id="game-top-bar">
+            <button onclick="exitGameToDashboard()" class="btn btn-danger" style="padding: 8px 16px; font-size: 13px;">🏠 العودة للوحة التحكم</button>
+        </div>
         <div id="status"><span class="title">Leaderboard</span></div>
         <div class="chatbox" id="chatbox">
             <ul id="chatList" class="chat-list"></ul>
@@ -202,252 +235,287 @@
         <canvas tabindex="1" id="cvs"></canvas>
     </div>
 
-    <!-- المحفظة ولوحة التحكم والشروع الموحدة -->
-    <div class="main-container">
+    <!-- الواجهة الرئيسية المحترفة -->
+    <div class="main-wrapper" id="main-ui">
 
-        <!-- 1. قسم تسجيل الدخول / إنشاء حساب -->
+        <!-- 1. شاشة تسجيل الدخول / حساب جديد -->
         <div id="auth-section" class="card">
-            <div class="auth-header">
-                <h1>منصة ترلالي للالعاب والمحفظة الرقمية</h1>
-                <p style="color: var(--text-muted); font-size: 14px; margin-top: 5px;">سجل دخولك لبدء اللعب وإدارة نقاطك</p>
-            </div>
-
+            <div class="app-title">منصة ترلالي للألعاب - تسجيل الدخول</div>
+            
             <div class="input-group">
                 <label>البريد الإلكتروني</label>
-                <input type="email" id="auth-email" placeholder="name@example.com">
+                <input type="email" id="auth-email" placeholder="example.user@email.com" dir="ltr" style="text-align: left;">
             </div>
 
             <div class="input-group">
                 <label>كلمة المرور</label>
-                <input type="password" id="auth-password" placeholder="••••••••">
+                <input type="password" id="auth-password" placeholder="••••••••" dir="ltr" style="text-align: left;">
             </div>
 
-            <div id="auth-msg" class="msg-box hidden"></div>
+            <div id="auth-msg-box" class="msg-box hidden"></div>
 
-            <div style="margin-top: 20px;">
-                <button class="btn btn-primary" onclick="handleLogin()" style="margin-bottom: 10px;">تسجيل الدخول</button>
-                <button class="btn btn-secondary" onclick="handleRegister()">إنشاء حساب جديد</button>
+            <div style="margin-top: 25px; display: flex; gap: 12px;">
+                <button type="button" id="btn-do-login" class="btn btn-primary">تسجيل الدخول</button>
+                <button type="button" id="btn-do-register" class="btn btn-secondary">حساب جديد</button>
             </div>
         </div>
 
-        <!-- 2. لوحة التحكم وواجهة اللعبة المدمجة -->
+        <!-- 2. لوحة التحكم الشاملة -->
         <div id="dashboard-section" class="card hidden">
-            <div class="dashboard-header">
-                <h2>أهلاً بك، <span id="user-display-name" style="color: var(--accent-color);">...</span></h2>
-            </div>
+            <div class="app-title">منصة ترلالي للألعاب - لوحة التحكم الشاملة</div>
 
-            <!-- بطاقات الإحصائيات -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-title">الرصيد المالي</div>
-                    <div class="stat-value"><span id="val-balance">0.00</span> <small style="font-size: 12px;">ر.س</small></div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-title">رصيد النقاط</div>
-                    <div class="stat-value" style="color: var(--warning-color);" id="val-points">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-title">كود الإحالة</div>
-                    <div class="stat-value" style="font-size: 16px; color: var(--text-main);" id="val-ref-code">---</div>
-                </div>
-            </div>
+            <div class="grid-2">
+                <!-- القسم الأيمن: تفعيل الدخول واللعب -->
+                <div>
+                    <h3 style="margin-bottom: 15px; font-size: 18px; color: var(--accent-glow);">دخول الألعاب واللعب الفوري</h3>
 
-            <!-- حالة الاشتراك -->
-            <div style="text-align: center;">
-                <div id="lbl-sub-badge" class="status-badge status-inactive">حالة الاشتراك: غير مفعل</div>
-                <div id="timer-box" class="hidden" style="margin-bottom: 15px;">
-                    <span style="font-size: 13px; color: var(--text-muted);">الوقت المتبقي للصلاحية: </span>
-                    <span id="countdown" style="font-weight: bold; color: var(--success-color);">00:00:00</span>
-                </div>
-            </div>
+                    <div class="input-group">
+                        <label>الاسم أو البريد الإلكتروني للعب</label>
+                        <input type="text" id="playerNameInput" placeholder="أدخل اسمك في اللعبة">
+                    </div>
 
-            <!-- خانة الاسم المعرف للعب -->
-            <div class="input-group">
-                <label>اسم اللاعب في اللعبة (Nickname)</label>
-                <input type="text" tabindex="0" autofocus placeholder="أدخل اسمك في اللعبة" id="playerNameInput" maxlength="25" />
-                <b class="input-error" style="color: var(--danger-color); font-size: 12px; display: none;">الاسم يجب أن يحتوي على حروف وأرقام فقط!</b>
-            </div>
+                    <div class="sub-status-box">
+                        <div id="lbl-sub-status" class="badge badge-inactive">اشتراك غير مفعل 🔴</div>
+                        <div id="timer-container" class="hidden" style="margin-top: 8px; font-size: 14px; color: var(--text-muted);">
+                            المتبقي: <span id="lbl-timer" style="color: var(--success-color); font-weight: bold;">00:00:00</span>
+                        </div>
+                    </div>
 
-            <!-- أزرار اللعب والتحكم الأساسية -->
-            <div style="margin-bottom: 15px;">
-                <button id="btn-activate" class="btn btn-success" style="margin-bottom: 10px;" onclick="confirmActivation()">⚡ تفعيل 24 ساعة لعب (10 نقاط)</button>
-                
-                <div class="grid-buttons">
-                    <a onclick="document.getElementById('spawn_cell').play(); launchGame();" class="btn btn-primary" style="background: linear-gradient(135deg, #2563eb, #9333ea);">
-                        <button id="startButton" style="background:none; border:none; color:white; font-weight:bold; cursor:pointer; width:100%;">🎮 بدء اللعب (Play)</button>
-                    </a>
-                    <button id="spectateButton" class="btn btn-secondary" onclick="launchSpectate()">👁️ مشاهدة (Spectate)</button>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <button type="button" id="btn-activate-sub" class="btn btn-success">⚡ تفعيل 24 ساعة لعب (10 نقاط)</button>
+                        <button type="button" id="btn-launch-play" class="btn btn-game">🎮 بدء اللعب (Play)</button>
+                        <button type="button" id="btn-launch-spectate" class="btn btn-secondary">👁️ مشاهدة (Spectate)</button>
+                    </div>
                 </div>
 
-                <button id="settingsButton" class="btn btn-secondary" onclick="toggleSettings()" style="margin-top: 5px;">⚙️ الإعدادات (Settings)</button>
+                <!-- القسم الأيسر: الإحصائيات وتحويل النقاط -->
+                <div>
+                    <h3 style="margin-bottom: 15px; font-size: 18px; color: var(--accent-glow);">المحفظة والرصيد</h3>
+
+                    <div class="grid-2" style="margin-bottom: 18px;">
+                        <div class="stats-card">
+                            <div style="font-size: 13px; color: var(--text-muted);">الرصيد المالـي</div>
+                            <div class="stat-val"><span id="txt-balance">0.00</span> <small style="font-size: 13px; color: var(--accent-glow);">ر.س</small></div>
+                        </div>
+                        <div class="stats-card">
+                            <div style="font-size: 13px; color: var(--text-muted);">رصيد النقاط</div>
+                            <div class="stat-val" style="color: var(--warning-color);" id="txt-points">0</div>
+                        </div>
+                    </div>
+
+                    <div style="background: rgba(15, 23, 42, 0.4); padding: 15px; border-radius: 12px; border: 1px solid var(--card-border);">
+                        <h4 style="font-size: 15px; margin-bottom: 12px; text-align: center;">تحويل النقاط</h4>
+                        <div class="input-group">
+                            <input type="email" id="transfer-receiver" placeholder="البريد الإلكتروني للمستلم" dir="ltr" style="text-align: left; font-size: 13px;">
+                        </div>
+                        <div class="input-group">
+                            <input type="number" id="transfer-amount" placeholder="عدد النقاط (الحد الأدنى 50)" font-size: 13px;>
+                        </div>
+                        <button type="button" id="btn-do-transfer" class="btn btn-warning" style="padding: 10px;">تأكيد التحويل 💰</button>
+                        <div id="transfer-msg-box" class="msg-box hidden"></div>
+                    </div>
+                </div>
             </div>
 
-            <!-- خيارات الإعدادات المدمجة -->
-            <div id="settings" class="settings-box hidden">
-                <h3 style="margin-bottom: 10px; font-size: 16px;">إعدادات اللعبة</h3>
-                <label><input id="visBord" type="checkbox"> Show border (إظهار الحدود)</label>
-                <label><input id="showMass" type="checkbox"> Show mass (إظهار الكتلة)</label>
-                <label><input id="continuity" type="checkbox"> Continue moving when mouse is off-screen</label>
-                <label><input id="roundFood" type="checkbox" checked> Rounded food (طعام دائري)</label>
-                <label><input id="darkMode" type="checkbox"> Toggle Dark Mode (الوضع الليلي)</label>
+            <div style="margin-top: 30px; border-top: 1px solid var(--card-border); padding-top: 20px;">
+                <button type="button" id="btn-do-logout" class="btn btn-danger" style="max-width: 200px; margin: 0 auto;">🚪 تسجيل الخروج</button>
             </div>
-
-            <div class="divider"></div>
-
-            <!-- تحويل النقاط -->
-            <h3 style="font-size: 16px; margin-bottom: 12px; text-align: center;">تحويل نقاط لصديق</h3>
-            <div class="input-group">
-                <input type="email" id="receiver-email" placeholder="البريد الإلكتروني للمستلم">
-            </div>
-            <div class="input-group">
-                <input type="number" id="transfer-amount" placeholder="عدد النقاط (الحد الأدنى 50)">
-            </div>
-            <button class="btn btn-warning" onclick="confirmTransfer()">تحويل النقاط الآن</button>
-            <div id="transfer-msg-box" class="msg-box hidden"></div>
-
-            <div class="divider"></div>
-
-            <button class="btn btn-danger" onclick="logout()">تسجيل الخروج</button>
         </div>
 
     </div>
 
-    <!-- JS السكريبتات الأساسية -->
+    <!-- JS اللعبة الأصلي -->
     <script src="//code.jquery.com/jquery-2.2.0.min.js"></script>
     <script src="js/app.js"></script>
 
     <script>
-        // تهيئة Supabase
-        const SUPABASE_URL = "https://pttwrjtundpjpabrehxw.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dHdyanR1bmRwanBhYnJlaHh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc1OTAzMzUsImV4cCI6MjEwMzE2NjMzNX0.rYDYpwsMxG5-ifqFTNObYBfpjF43mXSaKonCWlzwt60";
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // مفاتيح Supabase المباشرة الآمنة للعميل (Anon Key)
+        const SUPABASE_URL = "https://pttwrjtundpjpabrehxw.supabase.co"; 
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dHdyanR1bmRwanBhYnJlaHh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc1OTAzMzUsImV4cCI6MjEwMzE2NjMzNX0.rYDYpwsMxG5-ifqFTNObYBfpjF43mXSaKonCWlzwt60"; 
 
-        let currentUserData = null;
-        let timerInterval = null;
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let currentUser = null;
+        let userData = null;
+        let countdownTimer = null;
 
-        document.addEventListener("DOMContentLoaded", async function() {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                loadUserData(session.user);
-            }
+        document.addEventListener("DOMContentLoaded", () => {
+            // ربط العناصر والأحداث
+            document.getElementById("btn-do-login").addEventListener("click", execLogin);
+            document.getElementById("btn-do-register").addEventListener("click", execRegister);
+            document.getElementById("btn-activate-sub").addEventListener("click", execActivate);
+            document.getElementById("btn-launch-play").addEventListener("click", execPlay);
+            document.getElementById("btn-launch-spectate").addEventListener("click", execSpectate);
+            document.getElementById("btn-do-transfer").addEventListener("click", execTransfer);
+            document.getElementById("btn-do-logout").addEventListener("click", execLogout);
+
+            // فحص الجلسة الحالية
+            checkCurrentSession();
         });
 
-        async function handleLogin() {
-            const email = document.getElementById("auth-email").value.trim();
-            const password = document.getElementById("auth-password").value;
-            showAuthMsg("");
-
-            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) {
-                showAuthMsg(error.message, true);
-            } else {
-                loadUserData(data.user);
+        async function checkCurrentSession() {
+            const { data: { session } } = await db.auth.getSession();
+            if (session) {
+                currentUser = session.user;
+                loadDashboard();
             }
         }
 
-        async function handleRegister() {
+        async function execLogin() {
             const email = document.getElementById("auth-email").value.trim();
             const password = document.getElementById("auth-password").value;
-            showAuthMsg("");
+            renderAuthMsg("");
 
-            const { data, error } = await supabase.auth.signUp({ email, password });
+            if (!email || !password) {
+                renderAuthMsg("يرجى إدخال البريد الإلكتروني وكلمة المرور.", true);
+                return;
+            }
+
+            const { data, error } = await db.auth.signInWithPassword({ email, password });
             if (error) {
-                showAuthMsg(error.message, true);
+                renderAuthMsg(error.message, true);
             } else {
-                showAuthMsg("تم إنشاء الحساب! يرجى تسجيل الدخول الان.", false);
+                currentUser = data.user;
+                loadDashboard();
             }
         }
 
-        async function loadUserData(user) {
-            localStorage.setItem("userEmail", user.email);
+        async function execRegister() {
+            const email = document.getElementById("auth-email").value.trim();
+            const password = document.getElementById("auth-password").value;
+            renderAuthMsg("");
+
+            if (!email || !password) {
+                renderAuthMsg("يرجى إدخال البيانات كاملة للتسجيل.", true);
+                return;
+            }
+
+            const { data, error } = await db.auth.signUp({ email, password });
+            if (error) {
+                renderAuthMsg(error.message, true);
+            } else {
+                renderAuthMsg("تم إنشاء الحساب بنجاح! يمكنك الدخول الآن.", false);
+            }
+        }
+
+        async function loadDashboard() {
+            if (!currentUser) return;
+
+            localStorage.setItem("userEmail", currentUser.email);
             document.getElementById("auth-section").classList.add("hidden");
             document.getElementById("dashboard-section").classList.remove("hidden");
-            document.getElementById("user-display-name").innerText = user.email.split('@')[0];
-            document.getElementById("playerNameInput").value = user.email.split('@')[0];
+            document.getElementById("playerNameInput").value = currentUser.email.split('@')[0];
 
-            const { data } = await supabase.from('users').select('*').eq('id', user.id).single();
+            const { data, error } = await db.from("users").select("*").eq("id", currentUser.id).single();
             if (data) {
-                currentUserData = data;
-                document.getElementById("val-balance").innerText = data.balance ? data.balance.toFixed(2) : "0.00";
-                document.getElementById("val-points").innerText = data.points || 0;
-                document.getElementById("val-ref-code").innerText = data.referral_code || "---";
-                updateSubscriptionUI(data.subscription_expires_at);
+                userData = data;
+                document.getElementById("txt-balance").innerText = data.balance ? data.balance.toFixed(2) : "0.00";
+                document.getElementById("txt-points").innerText = data.points || 0;
+                renderSubscriptionStatus(data.subscription_expires_at);
             }
         }
 
-        function updateSubscriptionUI(expiresAt) {
-            const badge = document.getElementById("lbl-sub-badge");
-            const timerBox = document.getElementById("timer-box");
-            
-            if (!expiresAt) return;
+        function renderSubscriptionStatus(expiresAt) {
+            const statusBadge = document.getElementById("lbl-sub-status");
+            const timerContainer = document.getElementById("timer-container");
 
-            const expiry = new Date(expiresAt);
-            const now = new Date();
+            clearInterval(countdownTimer);
 
-            if (expiry > now) {
-                badge.className = "status-badge status-active";
-                badge.innerText = "حالة الاشتراك: مفعل 🟢";
-                timerBox.classList.remove("hidden");
-                startTimer(expiry);
+            if (expiresAt && new Date(expiresAt) > new Date()) {
+                statusBadge.className = "badge badge-active";
+                statusBadge.innerText = "اشتراك مفعل 🟢";
+                timerContainer.classList.remove("hidden");
+
+                countdownTimer = setInterval(() => {
+                    const diff = new Date(expiresAt).getTime() - new Date().getTime();
+                    if (diff <= 0) {
+                        clearInterval(countdownTimer);
+                        renderSubscriptionStatus(null);
+                        return;
+                    }
+                    const h = Math.floor(diff / (1000 * 60 * 60));
+                    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    const s = Math.floor((diff % (1000 * 60)) / 1000);
+                    document.getElementById("lbl-timer").innerText = 
+                        `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                }, 1000);
             } else {
-                badge.className = "status-badge status-inactive";
-                badge.innerText = "حالة الاشتراك: غير مفعل 🔴";
-                timerBox.classList.add("hidden");
+                statusBadge.className = "badge badge-inactive";
+                statusBadge.innerText = "اشتراك غير مفعل 🔴";
+                timerContainer.classList.add("hidden");
             }
         }
 
-        function startTimer(expiryDate) {
-            clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                const now = new Date().getTime();
-                const distance = new Date(expiryDate).getTime() - now;
+        async function execActivate() {
+            if (!userData) return;
+            if ((userData.points || 0) < 10) {
+                alert("رصيد النقاط غير كافٍ! تحتاج إلى 10 نقاط لتفعيل اليوم.");
+                return;
+            }
 
-                if (distance < 0) {
-                    clearInterval(timerInterval);
-                    document.getElementById("countdown").innerText = "EXPIRED";
-                    updateSubscriptionUI(null);
-                    return;
-                }
-
-                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-                document.getElementById("countdown").innerText = 
-                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            }, 1000);
-        }
-
-        function launchGame() {
-            if (!currentUserData) return;
-            const now = new Date();
-            const subExpiry = currentUserData.subscription_expires_at ? new Date(currentUserData.subscription_expires_at) : null;
-
-            if (subExpiry && subExpiry > now) {
-                document.querySelector(".main-container").classList.add("hidden");
-                document.getElementById("gameAreaWrapper").classList.remove("hidden");
+            const { error } = await db.rpc("activate_daily_subscription", { user_id_param: currentUser.id });
+            if (error) {
+                alert("تعذر التفعيل: " + error.message);
             } else {
-                alert("اشتراكك غير مفعل! يرجى تفعيل يوم لعب أولاً برصيد 10 نقاط.");
+                alert("تم تفعيل 24 ساعة لعب بنجاح! 🎉");
+                loadDashboard();
             }
         }
 
-        function launchSpectate() {
-            document.querySelector(".main-container").classList.add("hidden");
+        function execPlay() {
+            if (!userData || !userData.subscription_expires_at || new Date(userData.subscription_expires_at) <= new Date()) {
+                alert("يرجى تفعيل الاشتراك برصيد 10 نقاط أولاً للبدء بالحصول على صلاحية اللعب!");
+                return;
+            }
+
+            // تشغيل صوت بدء اللعبة الأصيل
+            document.getElementById("spawn_cell").play();
+
+            // إخفاء الواجهة الرئيسية وإظهار اللعبة
+            document.getElementById("main-ui").classList.add("hidden");
             document.getElementById("gameAreaWrapper").classList.remove("hidden");
         }
 
-        function toggleSettings() {
-            document.getElementById("settings").classList.toggle("hidden");
+        function execSpectate() {
+            document.getElementById("main-ui").classList.add("hidden");
+            document.getElementById("gameAreaWrapper").classList.remove("hidden");
         }
 
-        async function logout() {
-            await supabase.auth.signOut();
+        function exitGameToDashboard() {
+            document.getElementById("gameAreaWrapper").classList.add("hidden");
+            document.getElementById("main-ui").classList.remove("hidden");
+        }
+
+        async function execTransfer() {
+            const receiver = document.getElementById("transfer-receiver").value.trim();
+            const amount = parseInt(document.getElementById("transfer-amount").value);
+
+            if (!receiver || isNaN(amount) || amount < 50) {
+                alert("يرجى إدخال بريد مستلم صحيح وأن لا يقل عدد النقاط عن 50 نقطة.");
+                return;
+            }
+
+            const { error } = await db.rpc("transfer_points", { 
+                sender_id: currentUser.id, 
+                receiver_email: receiver, 
+                points_to_transfer: amount 
+            });
+
+            if (error) {
+                alert("فشل التحويل: " + error.message);
+            } else {
+                alert("تم تحويل النقاط بنجاح!");
+                loadDashboard();
+            }
+        }
+
+        async function execLogout() {
+            await db.auth.signOut();
             localStorage.removeItem("userEmail");
             location.reload();
         }
 
-        function showAuthMsg(msg, isError) {
-            const box = document.getElementById("auth-msg");
+        function renderAuthMsg(msg, isError) {
+            const box = document.getElementById("auth-msg-box");
             if (!msg) { box.classList.add("hidden"); return; }
             box.className = `msg-box ${isError ? 'msg-error' : 'msg-success'}`;
             box.innerText = msg;
