@@ -323,11 +323,11 @@ const tickPlayer = (currentPlayer) => {
     currentPlayer.virusSplit(cellsToSplit, config.limitSplit, config.defaultPlayerMass);
 };
 
-const tickGame = async () => {
+const tickGame = () => {
     map.players.data.forEach(tickPlayer);
     map.massFood.move(config.gameWidth, config.gameHeight);
 
-    map.players.handleCollisions(async function (gotEaten, eater) {
+    map.players.handleCollisions(function (gotEaten, eater) {
         const cellGotEaten = map.players.getCell(gotEaten.playerIndex, gotEaten.cellIndex);
 
         map.players.data[eater.playerIndex].changeCellMass(eater.cellIndex, cellGotEaten.mass);
@@ -337,16 +337,14 @@ const tickGame = async () => {
             let playerGotEaten = map.players.data[gotEaten.playerIndex];
             let playerEater = map.players.data[eater.playerIndex];
 
-            // ⚔️ نقل نقطة من الخاسر إلى الرابح عبر Supabase
+            // ⚔️ نقل نقطة من الخاسر إلى الرابح عبر Supabase في الخلفية بدون حظر الخادم
             if (playerEater && playerGotEaten && playerEater.userId && playerGotEaten.userId && playerEater.userId !== playerGotEaten.userId) {
-                try {
-                    await supabase.rpc('transfer_point_on_eat', {
-                        winner_id: playerEater.userId,
-                        loser_id: playerGotEaten.userId
-                    });
-                } catch (err) {
+                supabase.rpc('transfer_point_on_eat', {
+                    winner_id: playerEater.userId,
+                    loser_id: playerGotEaten.userId
+                }).catch(err => {
                     console.error('Error transferring point on eat:', err);
-                }
+                });
             }
 
             io.emit('playerDied', { name: playerGotEaten.name });
