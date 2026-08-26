@@ -328,29 +328,42 @@ const tickGame = () => {
     map.massFood.move(config.gameWidth, config.gameHeight);
 
     map.players.handleCollisions(function (gotEaten, eater) {
-        const cellGotEaten = map.players.getCell(gotEaten.playerIndex, gotEaten.cellIndex);
+        // 🔒 فحص حماية حازم: تجنب الانهيار إذا كانت العناصر غير معرفة
+        if (!gotEaten || !eater || gotEaten.playerIndex === undefined || eater.playerIndex === undefined) {
+            return;
+        }
 
-        map.players.data[eater.playerIndex].changeCellMass(eater.cellIndex, cellGotEaten.mass);
+        const cellGotEaten = map.players.getCell(gotEaten.playerIndex, gotEaten.cellIndex);
+        const eaterPlayer = map.players.data[eater.playerIndex];
+
+        // التأكد من وجود الخلية واللاعب الملتهم قبل إجراء العملية
+        if (!cellGotEaten || !eaterPlayer) return;
+
+        eaterPlayer.changeCellMass(eater.cellIndex, cellGotEaten.mass);
 
         const playerDied = map.players.removeCell(gotEaten.playerIndex, gotEaten.cellIndex);
         if (playerDied) {
             let playerGotEaten = map.players.data[gotEaten.playerIndex];
             let playerEater = map.players.data[eater.playerIndex];
 
-            // ⚔️ نقل نقطة من الخاسر إلى الرابح عبر Supabase في الخلفية بدون حظر الخادم
-            if (playerEater && playerGotEaten && playerEater.userId && playerGotEaten.userId && playerEater.userId !== playerGotEaten.userId) {
-                supabase.rpc('transfer_point_on_eat', {
-                    winner_id: playerEater.userId,
-                    loser_id: playerGotEaten.userId
-                }).catch(err => {
-                    console.error('Error transferring point on eat:', err);
-                });
+            if (playerGotEaten && playerEater) {
+                // ⚔️ نقل نقطة من الخاسر إلى الرابح عبر Supabase في الخلفية بدون حظر الخادم
+                if (playerEater.userId && playerGotEaten.userId && playerEater.userId !== playerGotEaten.userId) {
+                    supabase.rpc('transfer_point_on_eat', {
+                        winner_id: playerEater.userId,
+                        loser_id: playerGotEaten.userId
+                    }).catch(err => {
+                        console.error('Error transferring point on eat:', err);
+                    });
+                }
+
+                io.emit('playerDied', { name: playerGotEaten.name || '' });
+
+                if (sockets[playerGotEaten.id]) {
+                    sockets[playerGotEaten.id].emit('RIP');
+                }
             }
 
-            io.emit('playerDied', { name: playerGotEaten.name });
-            if (sockets[playerGotEaten.id]) {
-                sockets[playerGotEaten.id].emit('RIP');
-            }
             map.players.removePlayerByIndex(gotEaten.playerIndex);
         }
     });
