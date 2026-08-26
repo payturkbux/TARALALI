@@ -1,11 +1,15 @@
-require('dotenv').config();
+try {
+    require('dotenv').config();
+} catch (e) {
+    console.log('Dotenv not loaded, using system environment variables.');
+}
 
 const { createClient } = require('@supabase/supabase-js');
 const path = require('path');
 
-const SUPABASE_URL = 'process.env.SUPABASE_URL';
-// مفتاح Service Role لضمان الوصول من السيرفر
-const SUPABASE_SERVICE_KEY = 'process.env.SUPABASE_SERVICE_KEY';
+// قراءة المتغيرات بالشكل الصحيح من process.env
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
     auth: {
