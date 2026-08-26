@@ -60,5 +60,15 @@
     <!-- JS -->
     <script src="//code.jquery.com/jquery-2.2.0.min.js"></script>
     <script src="js/app.js"></script>
+    <script>
+  // قراءة البريد الإلكتروني المخزن من صفحة الواجهة وتعبئته تلقائياً في حقل الاسم
+  document.addEventListener("DOMContentLoaded", function() {
+    const savedEmail = localStorage.getItem("userEmail");
+    const playerNameInput = document.getElementById("playerNameInput");
+    if (savedEmail && playerNameInput) {
+      playerNameInput.value = savedEmail;
+    }
+  });
+</script>
 </body>
 </html>

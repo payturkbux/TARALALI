@@ -662,17 +662,15 @@
         }
 
         function launchGame() {
-            const now = new Date();
-            const subExpiry = currentUserData.subscription_expires_at ? new Date(currentUserData.subscription_expires_at) : null;
-            
-            if (subExpiry && subExpiry > now) {
-                window.location.href = "https://taralali.onrender.com";
-            } else {
-                alert("اشتراكك غير مفعل! يرجى تفعيل يوم لعب أولاً.");
-                updateUI();
-            }
-        }
-
+    if (currentUserData && currentUserData.email) {
+        // حفظ البريد في LocalStorage لتقرأه اللعبة
+        localStorage.setItem("userEmail", currentUserData.email);
+        // التوجيه للعبة
+        window.location.href = "/game.html";
+    } else {
+        alert("يرجى تسجيل الدخول أولاً!");
+    }
+}
         function confirmActivation() {
             const now = new Date();
             const subExpiry = currentUserData.subscription_expires_at ? new Date(currentUserData.subscription_expires_at) : null;
