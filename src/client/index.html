@@ -11,8 +11,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 
-    <!-- Supabase SDK -->
+    <!-- Supabase SDK & Socket.io (المهمة للعبة) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/socket.io/socket.io.js"></script>
 
     <!-- الأصوات الخاصة باللعبة -->
     <audio id="split_cell" src="audio/split.mp3"></audio>
@@ -52,7 +53,7 @@
         .main-wrapper {
             width: 100%;
             max-width: 960px;
-            z-index: 10;
+            z-index: 100;
         }
 
         .card {
@@ -209,15 +210,20 @@
 
         #game-top-bar {
             position: fixed;
-            top: 10px;
-            right: 10px;
-            z-index: 99999;
+            top: 15px;
+            right: 15px;
+            z-index: 999999;
+        }
+
+        /* إخفاء القائمة القديمة تلقائياً دون إزالتها من الـ DOM كي لا يعطل app.js */
+        #startMenuWrapper {
+            display: none !important;
         }
     </style>
 </head>
 <body>
 
-    <!-- حاوية اللعبة المباشرة -->
+    <!-- عناصر اللعبة الأصلية الشاملة -->
     <div id="gameAreaWrapper" class="hidden">
         <div id="game-top-bar">
             <button onclick="exitGameToDashboard()" class="btn btn-danger" style="padding: 8px 16px; font-size: 13px;">🏠 العودة للوحة التحكم</button>
@@ -234,7 +240,42 @@
         <canvas tabindex="1" id="cvs"></canvas>
     </div>
 
-    <!-- الواجهة الرئيسية -->
+    <!-- العناصر المطلوبة برمجياً من قبل app.js داخل الـ DOM المخفية لتفادي أخطاء JavaScript -->
+    <div id="startMenuWrapper">
+        <div id="startMenu">
+            <p>Open Agar</p>
+            <input type="text" tabindex="0" autofocus placeholder="Enter your name here" id="playerNameInput" maxlength="25" />
+            <b class="input-error">Nick must be alphanumeric characters only!</b>
+            <br />
+            <a onclick="document.getElementById('spawn_cell').play();"><button id="startButton">Play</button></a>
+            <button id="spectateButton">Spectate</button>
+            <button id="settingsButton">Settings</button>
+            <br />
+            <div id="settings">
+                <h3>Settings</h3>
+                <ul>
+                    <label><input id="visBord" type="checkbox">Show border</label>
+                    <label><input id="showMass" type="checkbox">Show mass</label>
+                    <br />
+                    <label><input id="continuity" type="checkbox">Continue moving when mouse is off-screen</label>
+                    <br />
+                    <label><input id="roundFood" type="checkbox" checked>Rounded food</label>
+                    <label><input id="darkMode" type="checkbox">Toggle Dark Mode</label>
+                </ul>
+            </div>
+            <div id="instructions">
+                <h3>Gameplay</h3>
+                <ul>
+                    <li>Move your mouse on the screen to move your character.</li>
+                    <li>Eat food and other players in order to grow your character (food respawns every time a player eats it).</li>
+                    <li>A player's mass is the number of food particles eaten.</li>
+                    <li>Objective: Try to get fat and eat other players.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- الواجهة الرئيسية الحديثة للمنصة -->
     <div class="main-wrapper" id="main-ui">
 
         <!-- 1. شاشة تسجيل الدخول -->
@@ -269,8 +310,8 @@
                     <h3 style="margin-bottom: 15px; font-size: 18px; color: var(--accent-glow);">دخول الألعاب واللعب الفوري</h3>
 
                     <div class="input-group">
-                        <label>الاسم أو البريد الإلكتروني للعب</label>
-                        <input type="text" id="playerNameInput" placeholder="أدخل اسمك في اللعبة">
+                        <label>الاسم داخل اللعبة</label>
+                        <input type="text" id="customPlayerName" placeholder="أدخل اسمك في اللعبة">
                     </div>
 
                     <div class="sub-status-box">
@@ -287,7 +328,7 @@
                     </div>
                 </div>
 
-                <!-- القسم الأيسر: المحفظة -->
+                <!-- القسم الأيسر: المحفظة والرصيد -->
                 <div>
                     <h3 style="margin-bottom: 15px; font-size: 18px; color: var(--accent-glow);">المحفظة والرصيد</h3>
 
@@ -323,7 +364,7 @@
 
     </div>
 
-    <!-- JS اللعبة الأصلي -->
+    <!-- JS المكتبات واللعبة -->
     <script src="//code.jquery.com/jquery-2.2.0.min.js"></script>
     <script src="js/app.js"></script>
 
@@ -399,7 +440,7 @@
             localStorage.setItem("userEmail", currentUser.email);
             document.getElementById("auth-section").classList.add("hidden");
             document.getElementById("dashboard-section").classList.remove("hidden");
-            document.getElementById("playerNameInput").value = currentUser.email.split('@')[0];
+            document.getElementById("customPlayerName").value = currentUser.email.split('@')[0];
 
             const { data, error } = await db.from("users").select("*").eq("id", currentUser.id).single();
             if (data) {
@@ -458,29 +499,27 @@
         }
 
         function execPlay() {
-            const nickName = document.getElementById("playerNameInput").value.trim() || "Player";
+            const nick = document.getElementById("customPlayerName").value.trim() || "Player";
+            
+            // نقل الاسم إلى العنصر الأصلي المعرّف عليه في app.js
+            document.getElementById("playerNameInput").value = nick;
 
-            // تشغيل صوت بدء اللعبة بشكل آمن
-            try {
-                const sound = document.getElementById("spawn_cell");
-                if (sound) sound.play().catch(() => {});
-            } catch (e) {}
-
-            // إخفاء الواجهة الرئيسية وإظهار اللعبة
+            // إخفاء الواجهة وإظهار اللعبة
             document.getElementById("main-ui").classList.add("hidden");
             document.getElementById("gameAreaWrapper").classList.remove("hidden");
 
-            // إرسال بدء اللعبة للـ Engine الأصلي (js/app.js)
-            if (typeof window.startGame === "function") {
-                window.startGame(nickName);
-            } else if (typeof window.startGame === "undefined" && typeof startGame === "function") {
-                startGame(nickName);
-            }
+            // تشغيل محرك اللعبة تلقائياً عبر الزر الأصلي
+            try {
+                document.getElementById("spawn_cell").play().catch(() => {});
+            } catch (e) {}
+
+            document.getElementById("startButton").click();
         }
 
         function execSpectate() {
             document.getElementById("main-ui").classList.add("hidden");
             document.getElementById("gameAreaWrapper").classList.remove("hidden");
+            document.getElementById("spectateButton").click();
         }
 
         function exitGameToDashboard() {
