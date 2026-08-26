@@ -621,11 +621,24 @@
 
         async function execActivate() {
             if (!userData) return;
+
+            // 1. خيار المنع: التحقق أولاً من صلاحية الاشتراك الحالي قبل خصم أي نقاط
+            const now = new Date();
+            const currentExpiry = userData.subscription_expires_at ? new Date(userData.subscription_expires_at) : null;
+
+            if (currentExpiry && currentExpiry > now) {
+                const formattedDate = currentExpiry.toLocaleString('ar-EG');
+                alert(`اشتراكك الحالي لا يزال فعالاً حتى (${formattedDate}). لا يمكنك التجديد الآن!`);
+                return; // إلغاء العملية فوراً ومنع الخصم
+            }
+
+            // 2. التحقق من وجود نقاط كافية (10 نقاط)
             if ((userData.points || 0) < 10) {
                 alert("رصيد النقاط غير كافٍ! تحتاج إلى 10 نقاط لتفعيل اليوم.");
                 return;
             }
 
+            // 3. التفعيل في حال انتهى الاشتراك أو لم يكن مفعلاً
             const { error } = await db.rpc("activate_daily_subscription", { user_id_param: currentUser.id });
             if (error) {
                 alert("تعذر التفعيل: " + error.message);
