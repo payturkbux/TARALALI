@@ -39,6 +39,9 @@ let leaderboardChanged = false;
 const Vector = SAT.Vector;
 
 app.use(express.static(__dirname + '/../client'));
+app.get('/', function(req, res) {
+    res.sendFile(path.resolve(__dirname + '/../client/index.html'));
+});
 
 io.on('connection', function (socket) {
     let type = socket.handshake.query.type;
