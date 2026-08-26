@@ -5,8 +5,6 @@
     <title>TARALALI | لوحة تحكم الإدارة</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap">
-    
-    <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <style>
@@ -66,7 +64,6 @@
             </div>
         </div>
 
-        <!-- الإحصائيات العامة -->
         <div class="stats-grid">
             <div class="stat-card">
                 <div style="color: var(--text-muted); font-size: 13px;">إجمالي المستخدمين</div>
@@ -82,7 +79,6 @@
             </div>
         </div>
 
-        <!-- جدول إدارة المستخدمين -->
         <div class="table-container">
             <h3 style="margin-bottom: 15px; color: var(--accent-blue);">قائمة المستخدمين والتحكم بالحسابات</h3>
             <table>
@@ -96,15 +92,13 @@
                         <th>إجراءات التحكم</th>
                     </tr>
                 </thead>
-                <tbody id="users-table-body">
-                    <!-- تُجلب البيانات ديناميكياً -->
-                </tbody>
+                <tbody id="users-table-body"></tbody>
             </table>
         </div>
     </div>
 
     <script>
-        // ⚠️ ضع هنا فقط المفتاح العادي (Anon Key) الخاص بالعميل - لا تضع Service Key إطلاقاً!
+        // ⚠️ ضع مفاتيحك الخاصة هنا (Anon Key فقط)
         const SUPABASE_URL = "https://YOUR_SUPABASE_PROJECT_ID.supabase.co"; 
         const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY"; 
 
@@ -124,7 +118,6 @@
                 return;
             }
 
-            // فحص صلاحية الأدمن من جدول users
             const { data: userRecord, error } = await db.from("users").select("role").eq("id", session.user.id).single();
             if (error || !userRecord || userRecord.role !== "admin") {
                 showDenied();
@@ -142,7 +135,6 @@
         }
 
         async function loadAdminData() {
-            // استدعاء دالة RPC الآمنة لـ الأدمن
             const { data: users, error } = await db.rpc("get_all_users_admin");
             if (error) {
                 alert("خطأ في جلب البيانات: " + error.message);
@@ -183,7 +175,7 @@
             document.getElementById("stat-total-points").innerText = totalPoints;
         }
 
-        // تعديل النقاط والرصيد للمستخدم مباشرة
+        // استدعاء دالة التحديث الآمنة من السيرفر
         async function updateUserValues(userId) {
             const newBalance = parseFloat(document.getElementById(`bal-${userId}`).value);
             const newPoints = parseInt(document.getElementById(`pts-${userId}`).value);
@@ -193,7 +185,12 @@
                 return;
             }
 
-            const { error } = await db.from("users").update({ balance: newBalance, points: newPoints }).eq("id", userId);
+            const { error } = await db.rpc("admin_update_user", { 
+                target_user_id: userId, 
+                new_balance: newBalance, 
+                new_points: newPoints 
+            });
+
             if (error) {
                 alert("فشل التحديث: " + error.message);
             } else {
@@ -202,10 +199,10 @@
             }
         }
 
-        // منح المستخدم 24 ساعة لعب مجانية من الأدمن
+        // استدعاء دالة التفعيل الآمنة من السيرفر
         async function add24hSub(userId) {
-            const newExpire = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-            const { error } = await db.from("users").update({ subscription_expires_at: newExpire }).eq("id", userId);
+            const { error } = await db.rpc("admin_grant_24h", { target_user_id: userId });
+
             if (error) {
                 alert("فشل التفعيل: " + error.message);
             } else {
