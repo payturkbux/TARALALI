@@ -1,12 +1,13 @@
 const { createClient } = require('@supabase/supabase-js');
+const path = require('path');
 
 const SUPABASE_URL = 'https://pttwrjtundpjpabrehxw.supabase.co';
-// استخدم مفتاح Service Role بدلاً من anon key لضمان الصلاحيات الكاملة على السيرفر
+// مفتاح Service Role لضمان الوصول من السيرفر
 const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dHdyanR1bmRwanBhYnJlaHh3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NzU5MDMzNSwiZXhwIjoyMTAzMTY2MzM1fQ.oQ3SacBwgG4D2bMoHTvc0Ll1ZmvJSvZAT13Et2fTm2Q';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
     auth: {
-        persistSession: false // لا داعي لحفظ الجلسة في بيئة Node.js السيرفر
+        persistSession: false
     }
 });
 
@@ -25,7 +26,7 @@ const chatRepository = require('./repositories/chat-repository');
 const config = require('../../config');
 const util = require('./lib/util');
 const mapUtils = require('./map/map');
-const {getPosition} = require("./lib/entityUtils");
+const { getPosition } = require("./lib/entityUtils");
 
 let map = new mapUtils.Map(config);
 
@@ -60,9 +61,8 @@ io.on('connection', function (socket) {
 
 function generateSpawnpoint() {
     let radius = util.massToRadius(config.defaultPlayerMass);
-    return getPosition(config.newPlayerInitialPosition === 'farthest', radius, map.players.data)
+    return getPosition(config.newPlayerInitialPosition === 'farthest', radius, map.players.data);
 }
-
 
 const addPlayer = (socket) => {
     var currentPlayer = new mapUtils.playerUtils.Player(socket.id);
@@ -70,16 +70,23 @@ const addPlayer = (socket) => {
     socket.on('gotit', async function (clientPlayerData) {
         console.log('[INFO] Player ' + clientPlayerData.name + ' connecting!');
         
-        // 🔒 1. فحص اشتراك اللاعب من قاعدة بيانات Supabase قبل دخوله اللعبة
+        if (!clientPlayerData || !clientPlayerData.name) {
+            socket.emit('kick', 'اسم المستخدم غير صالح.');
+            socket.disconnect();
+            return;
+        }
+
         const userEmail = clientPlayerData.name.trim().toLowerCase();
 
+        // 🔒 1. فحص اشتراك اللاعب من قاعدة بيانات Supabase بحثاً بالبريد أو اسم المستخدم
         const { data: user, error } = await supabase
             .from('users')
             .select('subscription_expires_at')
-            .eq('username', userEmail)
+            .or(`email.eq.${userEmail},username.eq.${userEmail}`)
             .maybeSingle();
 
-        const now = new Date();
+        // إضافة هامش أمان 5 دقائق لتفادي فارق الساعات بين المتصفح والسيرفر
+        const now = new Date(Date.now() - 5 * 60 * 1000); 
         const subExpiry = user?.subscription_expires_at ? new Date(user.subscription_expires_at) : null;
 
         if (error || !user || !subExpiry || subExpiry <= now) {
@@ -89,7 +96,7 @@ const addPlayer = (socket) => {
             return;
         }
 
-        // 🟢 2. متابعة عملية الدخول في حال كان الاشتراك سارياً
+        // 🟢 2. متابعة عملية الدخول عند ثبوت صحة الاشتراك
         currentPlayer.init(generateSpawnpoint(), config.defaultPlayerMass);
 
         if (map.players.findIndexByID(socket.id) > -1) {
@@ -110,7 +117,6 @@ const addPlayer = (socket) => {
             io.emit('playerJoin', { name: currentPlayer.name });
             console.log('Total players: ' + map.players.data.length);
         }
-
     });
 
     socket.on('pingcheck', () => {
@@ -210,7 +216,7 @@ const addPlayer = (socket) => {
         }
     });
 
-    // Heartbeat function, update everytime.
+    // Heartbeat function
     socket.on('0', (target) => {
         currentPlayer.lastHeartbeat = new Date().getTime();
         if (target.x !== currentPlayer.x || target.y !== currentPlayer.y) {
@@ -232,7 +238,7 @@ const addPlayer = (socket) => {
     socket.on('2', () => {
         currentPlayer.userSplit(config.limitSplit, config.defaultPlayerMass);
     });
-}
+};
 
 const addSpectator = (socket) => {
     socket.on('gotit', function () {
@@ -245,12 +251,14 @@ const addSpectator = (socket) => {
         width: config.gameWidth,
         height: config.gameHeight
     });
-}
+};
 
 const tickPlayer = (currentPlayer) => {
     if (currentPlayer.lastHeartbeat < new Date().getTime() - config.maxHeartbeatInterval) {
-        sockets[currentPlayer.id].emit('kick', 'Last heartbeat received over ' + config.maxHeartbeatInterval + ' ago.');
-        sockets[currentPlayer.id].disconnect();
+        if (sockets[currentPlayer.id]) {
+            sockets[currentPlayer.id].emit('kick', 'Last heartbeat received over ' + config.maxHeartbeatInterval + ' ago.');
+            sockets[currentPlayer.id].disconnect();
+        }
     }
 
     currentPlayer.move(config.slowBase, config.gameWidth, config.gameHeight, INIT_MASS_LOG);
@@ -271,8 +279,8 @@ const tickPlayer = (currentPlayer) => {
     };
 
     const canEatVirus = (cell, cellCircle, virus) => {
-        return virus.mass < cell.mass && isEntityInsideCircle(virus, cellCircle)
-    }
+        return virus.mass < cell.mass && isEntityInsideCircle(virus, cellCircle);
+    };
 
     const cellsToSplit = [];
     for (let cellIndex = 0; cellIndex < currentPlayer.cells.length; cellIndex++) {
@@ -286,7 +294,7 @@ const tickPlayer = (currentPlayer) => {
 
         if (eatenVirusIndexes.length > 0) {
             cellsToSplit.push(cellIndex);
-            map.viruses.delete(eatenVirusIndexes)
+            map.viruses.delete(eatenVirusIndexes);
         }
 
         let massGained = eatenMassIndexes.reduce((acc, index) => acc + map.massFood.data[index].mass, 0);
@@ -311,12 +319,13 @@ const tickGame = () => {
         const playerDied = map.players.removeCell(gotEaten.playerIndex, gotEaten.cellIndex);
         if (playerDied) {
             let playerGotEaten = map.players.data[gotEaten.playerIndex];
-            io.emit('playerDied', { name: playerGotEaten.name }); //TODO: on client it is `playerEatenName` instead of `name`
-            sockets[playerGotEaten.id].emit('RIP');
+            io.emit('playerDied', { name: playerGotEaten.name });
+            if (sockets[playerGotEaten.id]) {
+                sockets[playerGotEaten.id].emit('RIP');
+            }
             map.players.removePlayerByIndex(gotEaten.playerIndex);
         }
     });
-
 };
 
 const calculateLeaderboard = () => {
@@ -334,7 +343,7 @@ const calculateLeaderboard = () => {
             }
         }
     }
-}
+};
 
 const gameloop = () => {
     if (map.players.data.length > 0) {
@@ -348,9 +357,11 @@ const gameloop = () => {
 const sendUpdates = () => {
     spectators.forEach(updateSpectator);
     map.enumerateWhatPlayersSee(function (playerData, visiblePlayers, visibleFood, visibleMass, visibleViruses) {
-        sockets[playerData.id].emit('serverTellPlayerMove', playerData, visiblePlayers, visibleFood, visibleMass, visibleViruses);
-        if (leaderboardChanged) {
-            sendLeaderboard(sockets[playerData.id]);
+        if (sockets[playerData.id]) {
+            sockets[playerData.id].emit('serverTellPlayerMove', playerData, visiblePlayers, visibleFood, visibleMass, visibleViruses);
+            if (leaderboardChanged) {
+                sendLeaderboard(sockets[playerData.id]);
+            }
         }
     });
 
@@ -358,11 +369,14 @@ const sendUpdates = () => {
 };
 
 const sendLeaderboard = (socket) => {
-    socket.emit('leaderboard', {
-        players: map.players.data.length,
-        leaderboard
-    });
-}
+    if (socket) {
+        socket.emit('leaderboard', {
+            players: map.players.data.length,
+            leaderboard
+        });
+    }
+};
+
 const updateSpectator = (socketID) => {
     let playerData = {
         x: config.gameWidth / 2,
@@ -373,17 +387,19 @@ const updateSpectator = (socketID) => {
         id: socketID,
         name: ''
     };
-    sockets[socketID].emit('serverTellPlayerMove', playerData, map.players.data, map.food.data, map.massFood.data, map.viruses.data);
-    if (leaderboardChanged) {
-        sendLeaderboard(sockets[socketID]);
+    if (sockets[socketID]) {
+        sockets[socketID].emit('serverTellPlayerMove', playerData, map.players.data, map.food.data, map.massFood.data, map.viruses.data);
+        if (leaderboardChanged) {
+            sendLeaderboard(sockets[socketID]);
+        }
     }
-}
+};
 
 setInterval(tickGame, 1000 / 60);
 setInterval(gameloop, 1000);
 setInterval(sendUpdates, 1000 / config.networkUpdateFactor);
 
-// Don't touch, IP configurations.
-var ipaddress = process.env.OPENSHIFT_NODEJS_IP || process.env.IP || config.host;
-var serverport = process.env.OPENSHIFT_NODEJS_PORT || process.env.PORT || config.port;
-http.listen(serverport, ipaddress, () => console.log('[DEBUG] Listening on ' + ipaddress + ':' + serverport));
+var ipaddress = process.env.OPENSHIFT_NODEJS_IP || process.env.IP || config.host || '0.0.0.0';
+var serverport = process.env.OPENSHIFT_NODEJS_PORT || process.env.PORT || config.port || 3000;
+
+http.listen(serverport, ipaddress, () => console.log('[DEBUG] Server running on ' + ipaddress + ':' + serverport));
