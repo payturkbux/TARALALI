@@ -624,30 +624,37 @@
         }
 
         function execPlay() {
-            const isSubscribed = userData && userData.subscription_expires_at && new Date(userData.subscription_expires_at) > new Date();
-            
-            if (!isSubscribed) {
-                alert("عفواً! ينبغي عليك تفعيل اشتراك الـ 24 ساعة أولاً للتمكن من اللعب.");
-                return;
-            }
+    // 1. فحص تفعيل الاشتراك
+    const isSubscribed = userData && userData.subscription_expires_at && new Date(userData.subscription_expires_at) > new Date();
+    if (!isSubscribed) {
+        alert("عفواً! ينبغي عليك تفعيل اشتراك الـ 24 ساعة أولاً للتمكن من اللعب.");
+        return;
+    }
 
-            // فلترة وحماية اسم اللاعب قبل إرساله للعبة
-            const rawNick = document.getElementById("customPlayerName").value;
-            const cleanNick = sanitizeNick(rawNick);
-            
-            document.getElementById("customPlayerName").value = cleanNick;
-            document.getElementById("playerNameInput").value = cleanNick;
+    // 2. فحص رصيد النقاط (الشرط الجديد)
+    const userPoints = userData ? (userData.points || 0) : 0;
+    if (userPoints <= 0) {
+        alert("🚫 رصيدك 0 من النقاط! لا يمكنك دخول اللعبة حتى تقوم بشحن نقاط جديدة.");
+        return;
+    }
 
-            document.getElementById("main-ui").classList.add("hidden");
-            document.getElementById("gameAreaWrapper").classList.remove("hidden");
+    // تنظيف اسم اللاعب ومنع استخدام الإيميل
+    const rawNick = document.getElementById("customPlayerName").value;
+    const cleanNick = sanitizeNick(rawNick);
+    
+    document.getElementById("customPlayerName").value = cleanNick;
+    document.getElementById("playerNameInput").value = cleanNick;
 
-            try {
-                document.getElementById("spawn_cell").play().catch(() => {});
-            } catch (e) {}
+    // إخفاء الواجهة والدخول للعبة
+    document.getElementById("main-ui").classList.add("hidden");
+    document.getElementById("gameAreaWrapper").classList.remove("hidden");
 
-            document.getElementById("startButton").click();
-        }
+    try {
+        document.getElementById("spawn_cell").play().catch(() => {});
+    } catch (e) {}
 
+    document.getElementById("startButton").click();
+}
         function execSpectate() {
             document.getElementById("main-ui").classList.add("hidden");
             document.getElementById("gameAreaWrapper").classList.remove("hidden");

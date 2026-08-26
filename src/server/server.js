@@ -84,14 +84,13 @@ const addPlayer = (socket) => {
 
         const userEmail = clientPlayerData.name.trim().toLowerCase();
 
-        // 🔒 1. فحص اشتراك اللاعب من قاعدة بيانات Supabase بحثاً بالبريد أو اسم المستخدم
+        // 🔒 1. فحص الاشتراك والنقاط من قاعدة بيانات Supabase
         const { data: user, error } = await supabase
             .from('users')
-            .select('subscription_expires_at')
+            .select('id, points, subscription_expires_at')
             .or(`email.eq.${userEmail},username.eq.${userEmail}`)
             .maybeSingle();
 
-        // إضافة هامش أمان 5 دقائق لتفادي فارق الساعات بين المتصفح والسيرفر
         const now = new Date(Date.now() - 5 * 60 * 1000); 
         const subExpiry = user?.subscription_expires_at ? new Date(user.subscription_expires_at) : null;
 
@@ -102,7 +101,18 @@ const addPlayer = (socket) => {
             return;
         }
 
-        // 🟢 2. متابعة عملية الدخول عند ثبوت صحة الاشتراك
+        // 🚫 فحص رصيد النقاط قبل الدخول
+        if (!user.points || user.points <= 0) {
+            console.log('[DENIED] Player ' + userEmail + ' has 0 points.');
+            socket.emit('kick', 'رصيدك 0 من النقاط! يجب شحن النقاط للتمكن من اللعب.');
+            socket.disconnect();
+            return;
+        }
+
+        // حفظ ID الخاص باللاعب في قاعدة البيانات لاستخدامه عند الخصم والإضافة
+        currentPlayer.userId = user.id;
+
+        // 🟢 2. متابعة عملية الدخول عند ثبوت صحة الاشتراك والرصيد
         currentPlayer.init(generateSpawnpoint(), config.defaultPlayerMass);
 
         if (map.players.findIndexByID(socket.id) > -1) {
@@ -313,11 +323,11 @@ const tickPlayer = (currentPlayer) => {
     currentPlayer.virusSplit(cellsToSplit, config.limitSplit, config.defaultPlayerMass);
 };
 
-const tickGame = () => {
+const tickGame = async () => {
     map.players.data.forEach(tickPlayer);
     map.massFood.move(config.gameWidth, config.gameHeight);
 
-    map.players.handleCollisions(function (gotEaten, eater) {
+    map.players.handleCollisions(async function (gotEaten, eater) {
         const cellGotEaten = map.players.getCell(gotEaten.playerIndex, gotEaten.cellIndex);
 
         map.players.data[eater.playerIndex].changeCellMass(eater.cellIndex, cellGotEaten.mass);
@@ -325,6 +335,20 @@ const tickGame = () => {
         const playerDied = map.players.removeCell(gotEaten.playerIndex, gotEaten.cellIndex);
         if (playerDied) {
             let playerGotEaten = map.players.data[gotEaten.playerIndex];
+            let playerEater = map.players.data[eater.playerIndex];
+
+            // ⚔️ نقل نقطة من الخاسر إلى الرابح عبر Supabase
+            if (playerEater && playerGotEaten && playerEater.userId && playerGotEaten.userId && playerEater.userId !== playerGotEaten.userId) {
+                try {
+                    await supabase.rpc('transfer_point_on_eat', {
+                        winner_id: playerEater.userId,
+                        loser_id: playerGotEaten.userId
+                    });
+                } catch (err) {
+                    console.error('Error transferring point on eat:', err);
+                }
+            }
+
             io.emit('playerDied', { name: playerGotEaten.name });
             if (sockets[playerGotEaten.id]) {
                 sockets[playerGotEaten.id].emit('RIP');
