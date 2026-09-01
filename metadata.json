@@ -1,7 +1,0 @@
-{
-  "name": "AgarMideast - حرب طاقة الشرق الأوسط",
-  "description": "لعبة كرات الطاقة والمخازن الوطنية المتطورة لدول الشرق الأوسط العشرين مع أبراج الحماية الليزرية ومحفظة الطاقة الآمنة",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
-
